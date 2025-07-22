@@ -1,0 +1,79 @@
+CREATE TABLE PersonAlert (
+    PersonAlertID INTEGER PRIMARY KEY AUTOINCREMENT, -- Unique ID for this alert instance
+    PersonID NOT NULL,                               -- FK to Person table (not defined here)
+    AlertCodeID NOT NULL,                            -- FK to PersonAlertCodes table
+
+    AlertDescription TEXT,                                    -- Optional: case-specific notes
+    AlertSource VARCHAR(100),                                 -- E.g. NHS, GP, Self-reported, Social Worker
+    InformedResident BOOLEAN DEFAULT FALSE,                   -- Was the tenant informed?
+    
+    StartDate DATE NOT NULL,
+    EndDate DATE,                                              -- Optional expiry
+    ReviewDate DATE,                                           -- Optional periodic review
+    Active BOOLEAN DEFAULT TRUE,
+
+    CreatedBy VARCHAR(100),
+    LastUpdated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_alertcode FOREIGN KEY (AlertCodeID) REFERENCES PersonAlertCodes(AlertCodeID),
+    CONSTRAINT fk_person FOREIGN KEY (PersonID) REFERENCES Person(PersonID)
+);
+
+CREATE TABLE PersonAlertCodes (
+    AlertCodeID INTEGER PRIMARY KEY DEFAULT AUTOINCREMENT,    -- Unique internal ID
+    AlertCode VARCHAR(10) NOT NULL,                           -- Top-level code (e.g. MED1)
+    AlertSubcode VARCHAR(15) NOT NULL,                        -- Subcode (e.g. MED1.01)
+    AlertName VARCHAR(100) NOT NULL,                          -- Description of top-level code
+    AlertSubName VARCHAR(100),                                -- Description of subcode
+    AlertCategory VARCHAR(50),                                -- e.g. Health, Risk, Communication
+    IsCritical BOOLEAN DEFAULT FALSE,                         -- System-flagged urgency
+    IsAwaabRelevant BOOLEAN DEFAULT FALSE,                    -- If relevant to Awaab’s Law
+    RepairsImpact VARCHAR(10) CHECK (RepairsImpact IN ('High', 'Medium', 'Low', 'None')),
+    SupportRequired TEXT,                                     -- e.g. "Use interpreter", "Extra ventilation checks"
+    
+    CONSTRAINT unique_alert_pair UNIQUE (AlertCode, AlertSubcode)
+);
+
+INSERT INTO PersonAlertCodes (
+    AlertCode, AlertSubcode, AlertName, AlertSubName, AlertCategory,
+    IsCritical, IsAwaabRelevant, RepairsImpact, SupportRequired
+) VALUES
+-- MEDICAL CONDITIONS
+('MED1', 'MED1.01', 'Chronic Health Condition', 'Asthma', 'Health', TRUE, TRUE, 'High', 'Prioritise mould/damp repairs'),
+('MED1', 'MED1.02', 'Chronic Health Condition', 'COPD / Chronic Lung Disease', 'Health', TRUE, TRUE, 'High', 'Ensure adequate heating/ventilation'),
+('MED1', 'MED1.03', 'Chronic Health Condition', 'Cardiovascular Disease', 'Health', FALSE, FALSE, 'Medium', 'Avoid stairs; assess adaptations'),
+('MED1', 'MED1.04', 'Chronic Health Condition', 'Diabetes (Type 1/2)', 'Health', FALSE, FALSE, 'Low', 'Ensure refrigeration, reduce damp risk'),
+('MED1', 'MED1.05', 'Chronic Health Condition', 'Epilepsy', 'Health', FALSE, FALSE, 'Low', 'Avoid bright lights; ensure safety features'),
+('MED1', 'MED1.06', 'Chronic Health Condition', 'Kidney Disease', 'Health', FALSE, TRUE, 'Medium', 'Prioritise water and hygiene access'),
+('MED1', 'MED1.07', 'Chronic Health Condition', 'Severe Allergies', 'Health', TRUE, TRUE, 'Medium', 'Avoid pest/mould triggers'),
+('MED1', 'MED1.08', 'Chronic Health Condition', 'Cancer (Active Treatment)', 'Health', TRUE, TRUE, 'High', 'Mask/contactless visits'),
+
+-- ENVIRONMENTAL RISKS
+('ENV1', 'ENV1.01', 'Environmental Risk', 'Hoarding Light', 'Environmental', FALSE, FALSE, 'Low', 'Engage with support services'),
+('ENV1', 'ENV1.02', 'Environmental Risk', 'Hoarding Moderate', 'Environmental', FALSE, TRUE, 'Medium', 'Schedule joint visit with caution'),
+('ENV1', 'ENV1.03', 'Environmental Risk', 'Hoarding Severe', 'Environmental', TRUE, TRUE, 'High', 'Escalate to safeguarding'),
+('ENV1', 'ENV1.04', 'Environmental Risk', 'Mould Vulnerability Known', 'Environmental', TRUE, TRUE, 'High', 'Fast-track repairs; alert surveyor'),
+('ENV1', 'ENV1.05', 'Environmental Risk', 'Cold Home Risk Medical', 'Environmental', TRUE, TRUE, 'High', 'Escalate heating/hot water repairs'),
+('ENV1', 'ENV1.06', 'Environmental Risk', 'No Access Risk Medical Need', 'Environmental', FALSE, TRUE, 'Medium', 'Coordinate support for entry'),
+
+-- STAFF SAFETY RISKS
+('RISK1', 'RISK1.01', 'Risk to Staff', 'Physical Aggression', 'Risk', TRUE, FALSE, 'High', 'Paired visits; alert contractors'),
+('RISK1', 'RISK1.02', 'Risk to Staff', 'Verbal Abuse/Threats', 'Risk', TRUE, FALSE, 'Medium', 'Staff with de-escalation training only'),
+('RISK1', 'RISK1.03', 'Risk to Staff', 'Harassment/Hate Behaviour', 'Risk', TRUE, FALSE, 'High', 'Match staff appropriately'),
+
+-- SAFEGUARDING & DOMESTIC ABUSE
+('SAF1', 'SAF1.01', 'Domestic Abuse Survivor', 'Known Domestic Abuse Survivor', 'Safeguarding', TRUE, TRUE, 'Medium', 'Use safe contact methods; no caller ID'),
+('SAF1', 'SAF1.02', 'Domestic Abuse Survivor', 'MARAC/Police Case', 'Safeguarding', TRUE, TRUE, 'High', 'No info sharing with third parties'),
+
+-- MENTAL HEALTH & COGNITIVE
+('VUL1', 'VUL1.01', 'Mental Health Concern', 'Severe Anxiety / Panic', 'Vulnerability', FALSE, TRUE, 'Medium', 'Use written contact methods'),
+('VUL1', 'VUL1.02', 'Mental Health Concern', 'Paranoia / Psychosis', 'Vulnerability', TRUE, TRUE, 'High', 'Provide detailed visit explanations'),
+('VUL1', 'VUL1.03', 'Mental Health Concern', 'Learning Disability', 'Vulnerability', FALSE, TRUE, 'Medium', 'Use Easy Read or plain language'),
+('VUL1', 'VUL1.04', 'Mental Health Concern', 'Dementia / Memory Loss', 'Vulnerability', FALSE, TRUE, 'Medium', 'Confirm contact with carer'),
+
+-- COMMUNICATION SUPPORT
+('COMM1', 'COMM1.01', 'Interpreter Required', 'Bengali', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
+('COMM1', 'COMM1.02', 'Interpreter Required', 'Urdu', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
+('COMM1', 'COMM1.03', 'Interpreter Required', 'Polish', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
+('COMM1', 'COMM1.04', 'Interpreter Required', 'British Sign Language / Deaf Services', 'Communication', TRUE, TRUE, 'High', 'Use text/email only; avoid phone'),
+('COMM1', 'COMM1.05', 'Communication Adjustment', 'Requires Large Print or Visual Aids', 'Communication', FALSE, TRUE, 'Low', 'Send high-contrast large font letters');
