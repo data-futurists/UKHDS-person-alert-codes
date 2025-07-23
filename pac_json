@@ -1,107 +1,127 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "PersonAlert",
-  "description": "Schema for person-level alerts in housing, repairs, and care context",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Person Alert Data Schema",
   "type": "object",
   "properties": {
-    "PersonAlertID": {
-      "type": "string",
-      "description": "Unique identifier for the alert record (UUID or system-generated)"
+    "PersonAlertCodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "AlertCodeID",
+          "AlertCode",
+          "AlertSubcode",
+          "AlertName",
+          "AlertSubName",
+          "AlertCategory",
+          "IsCritical",
+          "IsAwaabRelevant",
+          "RepairsImpact",
+          "SupportRequired"
+        ],
+        "properties": {
+          "AlertCodeID": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "AlertCode": {
+            "type": "string",
+            "maxLength": 10
+          },
+          "AlertSubcode": {
+            "type": "string",
+            "maxLength": 20
+          },
+          "AlertName": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "AlertSubName": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "AlertCategory": {
+            "type": "string",
+            "enum": ["Health", "Risk", "Safeguarding", "Vulnerability", "Communication", "Environmental"]
+          },
+          "IsCritical": {
+            "type": "boolean"
+          },
+          "IsAwaabRelevant": {
+            "type": "boolean"
+          },
+          "RepairsImpact": {
+            "type": "string",
+            "enum": ["High", "Medium", "Low", "None"]
+          },
+          "SupportRequired": {
+            "type": "string"
+          }
+        }
+      }
     },
-    "PersonID": {
-      "type": "string",
-      "description": "Foreign key linking to Person entity"
-    },
-    "AlertCode": {
-      "type": "string",
-      "description": "Top-level alert category code (e.g. 'MED1', 'RISK1')"
-    },
-    "AlertSubcode": {
-      "type": "string",
-      "description": "Specific subcategory code (e.g. 'MED1.01' = Asthma)"
-    },
-    "AlertName": {
-      "type": "string",
-      "description": "Human-readable name of the alert category"
-    },
-    "AlertSubName": {
-      "type": "string",
-      "description": "Human-readable name of the alert subcode"
-    },
-    "AlertCategory": {
-      "type": "string",
-      "description": "Functional category (e.g. 'Health', 'Risk to Staff', 'Communication')"
-    },
-    "AlertDescription": {
-      "type": "string",
-      "description": "Detailed description or context of the alert"
-    },
-    "IsCritical": {
-      "type": "boolean",
-      "description": "True if alert is flagged as critical for prioritisation"
-    },
-    "IsAwaabRelevant": {
-      "type": "boolean",
-      "description": "True if the alert has implications under Awaab’s Law (e.g. damp-related health)"
-    },
-    "RepairsImpact": {
-      "type": "string",
-      "enum": ["High", "Medium", "Low", "None"],
-      "description": "Impact level on repair scheduling, access, or risk"
-    },
-    "SupportRequired": {
-      "type": "string",
-      "description": "Plain text explanation of support needed (e.g. 'Use interpreter', 'Mask visit')"
-    },
-    "AlertSource": {
-      "type": "string",
-      "description": "Source of alert (e.g. Resident, NHS, Contractor, Social Worker)"
-    },
-    "EvidenceNotes": {
-      "type": "string",
-      "description": "Optional internal notes or references"
-    },
-    "InformedResident": {
-      "type": "boolean",
-      "description": "True if resident has been informed of the alert"
-    },
-    "StartDate": {
-      "type": "string",
-      "format": "date",
-      "description": "Date the alert became active"
-    },
-    "EndDate": {
-      "type": "string",
-      "format": "date",
-      "description": "Date the alert ends, if applicable"
-    },
-    "ReviewDate": {
-      "type": "string",
-      "format": "date",
-      "description": "Next date this alert should be reviewed"
-    },
-    "Active": {
-      "type": "boolean",
-      "description": "False if alert is archived/inactive but retained for history"
-    },
-    "CreatedBy": {
-      "type": "string",
-      "description": "System or user ID who created the alert"
-    },
-    "LastUpdated": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Timestamp of last update"
+    "PersonAlert": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "PersonAlertID",
+          "PersonID",
+          "AlertCodeID",
+          "StartDate",
+          "Active"
+        ],
+        "properties": {
+          "PersonAlertID": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "PersonID": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "AlertCodeID": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "AlertDescription": {
+            "type": "string"
+          },
+          "AlertSource": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "InformedResident": {
+            "type": "boolean",
+            "default": false
+          },
+          "StartDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "EndDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "ReviewDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "Active": {
+            "type": "boolean",
+            "default": true
+          },
+          "CreatedBy": {
+            "type": "string",
+            "maxLength": 100
+          },
+          "LastUpdated": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
     }
   },
-  "required": [
-    "PersonAlertID",
-    "PersonID",
-    "AlertCode",
-    "AlertName",
-    "IsCritical",
-    "StartDate",
-    "Active"
-  ],
-  "additionalProperties": false
+  "required": ["PersonAlertCodes", "PersonAlert"]
 }

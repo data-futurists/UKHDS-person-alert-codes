@@ -61,19 +61,60 @@ INSERT INTO PersonAlertCodes (
 ('RISK1', 'RISK1.02', 'Risk to Staff', 'Verbal Abuse/Threats', 'Risk', TRUE, FALSE, 'Medium', 'Staff with de-escalation training only'),
 ('RISK1', 'RISK1.03', 'Risk to Staff', 'Harassment/Hate Behaviour', 'Risk', TRUE, FALSE, 'High', 'Match staff appropriately'),
 
+-- RISK TO CONTRACTORS
+('RISK2', 'RISK2.01', 'Risk to Contractors', 'Unsafe Working Conditions', 'Risk', TRUE, FALSE, 'High', 'Pause works; risk assessment required'),
+('RISK2', 'RISK2.02', 'Risk to Contractors', 'Resident Aggression', 'Risk', TRUE, FALSE, 'High', 'Use trusted contractors; alert before visit'),
+('RISK2', 'RISK2.03', 'Risk to Contractors', 'Presence of Dangerous Pets', 'Risk', TRUE, FALSE, 'Medium', 'Ensure animals are secured before access'),
+
+-- RISK TO RESIDENT THEMSELVES
+('RISK3', 'RISK3.01', 'Risk to Resident', 'Self-Neglect', 'Risk', TRUE, TRUE, 'High', 'Refer to safeguarding team; joint home visit'),
+('RISK3', 'RISK3.02', 'Risk to Resident', 'Suicidal Ideation or History', 'Risk', TRUE, FALSE, 'High', 'Coordinate with support worker or clinician'),
+('RISK3', 'RISK3.03', 'Risk to Resident', 'Substance Misuse', 'Risk', TRUE, FALSE, 'Medium', 'Check for sharps/risks before contractor visits'),
+
 -- SAFEGUARDING & DOMESTIC ABUSE
 ('SAF1', 'SAF1.01', 'Domestic Abuse Survivor', 'Known Domestic Abuse Survivor', 'Safeguarding', TRUE, TRUE, 'Medium', 'Use safe contact methods; no caller ID'),
 ('SAF1', 'SAF1.02', 'Domestic Abuse Survivor', 'MARAC/Police Case', 'Safeguarding', TRUE, TRUE, 'High', 'No info sharing with third parties'),
+
+-- CHILD PROTECTION
+('SAF2', 'SAF2.01', 'Child Safeguarding Concern', 'Child Protection Plan in Place', 'Safeguarding', TRUE, TRUE, 'High', 'Liaise with Children Services; avoid unannounced visits'),
+('SAF2', 'SAF2.02', 'Child Safeguarding Concern', 'Unexplained School Absences / Welfare Concern', 'Safeguarding', FALSE, TRUE, 'Medium', 'Notify Tenancy and Safeguarding Team'),
+('SAF2', 'SAF2.03', 'Child Safeguarding Concern', 'Unsafe Home Environment for Children', 'Safeguarding', TRUE, TRUE, 'High', 'Report via safeguarding policy; joint visit with social care'),
+
+-- ADULT PROTECTION
+('SAF3', 'SAF3.01', 'Vulnerable Adult', 'Adult at Risk Care Act Section 42 Enquiry', 'Safeguarding', TRUE, TRUE, 'High', 'Follow safeguarding procedures; coordinate with adult social care'),
+('SAF3', 'SAF3.02', 'Vulnerable Adult', 'Known Self-Neglect / Hoarding Risk', 'Safeguarding', TRUE, TRUE, 'High', 'Involve mental health or tenancy support team'),
+('SAF3', 'SAF3.03', 'Vulnerable Adult', 'Cognitive Impairment or Memory Loss', 'Safeguarding', TRUE, TRUE, 'Medium', 'Use simple communication; confirm understanding'),
 
 -- MENTAL HEALTH & COGNITIVE
 ('VUL1', 'VUL1.01', 'Mental Health Concern', 'Severe Anxiety / Panic', 'Vulnerability', FALSE, TRUE, 'Medium', 'Use written contact methods'),
 ('VUL1', 'VUL1.02', 'Mental Health Concern', 'Paranoia / Psychosis', 'Vulnerability', TRUE, TRUE, 'High', 'Provide detailed visit explanations'),
 ('VUL1', 'VUL1.03', 'Mental Health Concern', 'Learning Disability', 'Vulnerability', FALSE, TRUE, 'Medium', 'Use Easy Read or plain language'),
 ('VUL1', 'VUL1.04', 'Mental Health Concern', 'Dementia / Memory Loss', 'Vulnerability', FALSE, TRUE, 'Medium', 'Confirm contact with carer'),
+('VUL1', 'VUL1.05', 'Mental Health Concern', 'Depression (Severe or Recurrent)', 'Vulnerability', FALSE, TRUE, 'Medium', 'Check for missed appointments; offer support referrals'),
+('VUL1', 'VUL1.06', 'Mental Health Concern', 'Suicidal Ideation / Self-Harm History', 'Vulnerability', TRUE, TRUE, 'High', 'Coordinate with support services before visits'),
+('VUL1', 'VUL1.07', 'Mental Health Concern', 'Autism / Sensory Sensitivity', 'Vulnerability', FALSE, TRUE, 'Medium', 'Minimise noise/disruption; avoid unplanned visits'),
+('VUL1', 'VUL1.08', 'Mental Health Concern', 'PTSD / Trauma Trigger Risk', 'Vulnerability', TRUE, TRUE, 'Medium', 'Avoid uniformed visits; use trauma-informed contact'),
+('VUL1', 'VUL1.09', 'Mental Health Concern', 'Substance Use (Recovery or Active)', 'Vulnerability', TRUE, TRUE, 'Medium', 'Be alert to environment risks; liaise with support staff'),
+('VUL1', 'VUL1.10', 'Mental Health Concern', 'ADHD / Executive Functioning Needs', 'Vulnerability', FALSE, FALSE, 'Low', 'Give reminders and timeframes in writing'),
+('VUL1', 'VUL1.11', 'Mental Health Concern', 'Bipolar Disorder', 'Vulnerability', FALSE, TRUE, 'Medium', 'Monitor communication style; confirm understanding'),
+('VUL1', 'VUL1.12', 'Mental Health Concern', 'Schizophrenia / Thought Disorder', 'Vulnerability', TRUE, TRUE, 'High', 'Avoid sudden visits; provide support staff presence'),
+('VUL1', 'VUL1.13', 'Mental Health Concern', 'Mental Capacity Concerns', 'Vulnerability', TRUE, TRUE, 'High', 'Liaise with carer or advocate; confirm legal rep'),
 
 -- COMMUNICATION SUPPORT
-('COMM1', 'COMM1.01', 'Interpreter Required', 'Bengali', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
-('COMM1', 'COMM1.02', 'Interpreter Required', 'Urdu', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
-('COMM1', 'COMM1.03', 'Interpreter Required', 'Polish', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
-('COMM1', 'COMM1.04', 'Interpreter Required', 'British Sign Language / Deaf Services', 'Communication', TRUE, TRUE, 'High', 'Use text/email only; avoid phone'),
-('COMM1', 'COMM1.05', 'Communication Adjustment', 'Requires Large Print or Visual Aids', 'Communication', FALSE, TRUE, 'Low', 'Send high-contrast large font letters');
+('COMM1', 'COMM1.01', 'Interpreter Required', 'British Sign Language / Deaf Services', 'Communication', TRUE, TRUE, 'High', 'Use text/email only; avoid phone'),
+('COMM1', 'COMM1.02', 'Interpreter Required', 'Bengali', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
+('COMM1', 'COMM1.03', 'Interpreter Required', 'Urdu', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
+('COMM1', 'COMM1.04', 'Interpreter Required', 'Polish', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
+('COMM1', 'COMM1.05', 'Interpreter Required', 'Somali', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
+('COMM1', 'COMM1.06', 'Interpreter Required', 'Romanian', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
+('COMM1', 'COMM1.07', 'Interpreter Required', 'Arabic', 'Communication', FALSE, TRUE, 'Medium', 'Book interpreter before visit'),
+
+-- COMMUNICATION ADJUSTMENTS
+('COMM2', 'COMM2.01', 'Communication Adjustment', 'Non-Literate / Limited Reading Ability', 'Communication', FALSE, TRUE, 'Medium', 'Use verbal or in-person explanations'),
+('COMM2', 'COMM2.02', 'Communication Adjustment', 'Cognitive Processing Delay', 'Communication', FALSE, TRUE, 'Medium', 'Give information slowly; repeat key points'),
+('COMM2', 'COMM2.03', 'Communication Adjustment', 'Uses Communication Device (e.g. AAC)', 'Communication', FALSE, TRUE, 'High', 'Allow extra time for interaction; check for device'),
+('COMM2', 'COMM2.04', 'Communication Adjustment', 'Speech Impairment or Muteness', 'Communication', FALSE, TRUE, 'Medium', 'Use written or visual communication'),
+('COMM2', 'COMM2.05', 'Communication Adjustment', 'Stammer / Speech Fluency Issue', 'Communication', FALSE, FALSE, 'Low', 'Be patient and avoid interrupting'),
+('COMM2', 'COMM2.06', 'Communication Adjustment', 'Prefers Email Only (Due to Anxiety)', 'Communication', FALSE, TRUE, 'Low', 'Avoid phone calls; confirm email received'),
+('COMM2', 'COMM2.07', 'Communication Adjustment', 'Neurodiverse Prefers Structured Contact', 'Communication', FALSE, TRUE, 'Medium', 'Give clear agendas and notice before visit'),
+('COMM2', 'COMM1.08', 'Communication Adjustment', 'Requires Large Print or Visual Aids', 'Communication', FALSE, TRUE, 'Low', 'Send high-contrast large font letters');
