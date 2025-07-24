@@ -1,31 +1,45 @@
-Table PersonAlertCodes {
-  AlertCodeID uuid [pk]
-  AlertCode varchar
-  AlertSubcode varchar [unique]
-  AlertName varchar
-  AlertSubName varchar
-  AlertCategory varchar
-  IsCritical boolean
-  IsAwaabRelevant boolean
-  RepairsImpact varchar
-  SupportRequired text
+Table person_alert {
+  person_alert_id integer [pk, increment, note: "Unique ID for this alert instance"]
+  person_id integer [not null]
+  alert_code_id integer [not null, ref: > person_alert_codes.alert_code_id, note: "FK to person_alert_codes table"]
 
-  Note: "Lookup table of person alert codes and subcodes, including risk, health, and support metadata"
+  alert_description text [note: "Optional: case-specific notes"]
+  alert_source varchar(100) [note: "E.g. NHS, GP, Self-reported, Social Worker"]
+  created_by varchar(100) [note: "Who created the alert - individual name"]
+  source_description text [note: "E.g. a specific GP, Hospital, or social worker"]
+  informed_resident boolean [default: false, note: "Was the tenant informed?"]
+
+  alert_progress varchar(20) [note: "Stable / Improving / Deteriorating / Fluctuating / Unknown"]
+  alert_duration_type varchar(20) [note: "Long Term / Temporary / Unknown"] 
+  alert_duration integer [note: "Duration in days if known (e.g. 30 for temporary)"]
+                       
+  start_date date [not null]
+  end_date date
+  review_date date
+  active boolean [default: true]
+  last_updated timestamp [default: `CURRENT_TIMESTAMP`]
+  updated_by varchar(100) [note: "Who last updated the alert"]
+
+  indexes {
+    (person_id, alert_code_id) [unique]
+  }
 }
 
-Table PersonAlert {
-  PersonAlertID uuid [pk]
-  PersonID uuid
-  AlertCodeID uuid [ref: > PersonAlertCodes.AlertCodeID]
-  AlertDescription text
-  AlertSource varchar
-  InformedResident boolean
-  StartDate date
-  EndDate date
-  ReviewDate date
-  Active boolean
-  CreatedBy varchar
-  LastUpdated timestamp
+Table person_alert_codes {
+  alert_code_id integer [pk, increment, note: "Unique internal ID"]
+  alert_code varchar(10) [not null, note: "Top-level code (e.g. MED1)"]
+  alert_subcode varchar(15) [not null, note: "Subcode (e.g. MED1.01)"]
 
-  Note: "Links alerts to individuals with start/end dates, context, and audit fields"
+  alert_category varchar(50) [note: "Category of alert (e.g. Medical, Risk, Environmental etc)"]
+  alert_name varchar(100) [not null, note: "Medical condition or risk type"]
+  alert_subname varchar(100) [note: "Specific condition or risk"]
+
+  is_critical boolean [default: false]
+  is_awaab_relevant boolean [default: false, note: "If relevant to Awaab’s Law"]
+  repairs_impact varchar(10) [note: "High / Medium / Low / None"]
+  support_required text [note: "e.g. Use interpreter, Extra ventilation checks"]
+
+  indexes {
+    (alert_code, alert_subcode) [unique]
+  }
 }

@@ -1,127 +1,126 @@
 {
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Person Alert Data Schema",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/person_alert.schema.json",
+  "title": "Person Alert",
   "type": "object",
   "properties": {
-    "PersonAlertCodes": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "AlertCodeID",
-          "AlertCode",
-          "AlertSubcode",
-          "AlertName",
-          "AlertSubName",
-          "AlertCategory",
-          "IsCritical",
-          "IsAwaabRelevant",
-          "RepairsImpact",
-          "SupportRequired"
-        ],
-        "properties": {
-          "AlertCodeID": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "AlertCode": {
-            "type": "string",
-            "maxLength": 10
-          },
-          "AlertSubcode": {
-            "type": "string",
-            "maxLength": 20
-          },
-          "AlertName": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "AlertSubName": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "AlertCategory": {
-            "type": "string",
-            "enum": ["Health", "Risk", "Safeguarding", "Vulnerability", "Communication", "Environmental"]
-          },
-          "IsCritical": {
-            "type": "boolean"
-          },
-          "IsAwaabRelevant": {
-            "type": "boolean"
-          },
-          "RepairsImpact": {
-            "type": "string",
-            "enum": ["High", "Medium", "Low", "None"]
-          },
-          "SupportRequired": {
-            "type": "string"
-          }
-        }
-      }
+    "person_alert_id": {
+      "type": "integer",
+      "description": "Unique ID for this alert instance"
     },
-    "PersonAlert": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "required": [
-          "PersonAlertID",
-          "PersonID",
-          "AlertCodeID",
-          "StartDate",
-          "Active"
-        ],
-        "properties": {
-          "PersonAlertID": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "PersonID": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "AlertCodeID": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "AlertDescription": {
-            "type": "string"
-          },
-          "AlertSource": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "InformedResident": {
-            "type": "boolean",
-            "default": false
-          },
-          "StartDate": {
-            "type": "string",
-            "format": "date"
-          },
-          "EndDate": {
-            "type": "string",
-            "format": "date"
-          },
-          "ReviewDate": {
-            "type": "string",
-            "format": "date"
-          },
-          "Active": {
-            "type": "boolean",
-            "default": true
-          },
-          "CreatedBy": {
-            "type": "string",
-            "maxLength": 100
-          },
-          "LastUpdated": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      }
+    "person_id": {
+      "type": "integer"
+    },
+    "alert_code_id": {
+      "type": "integer"
+    },
+    "alert_description": {
+      "type": ["string", "null"]
+    },
+    "alert_source": {
+      "type": ["string", "null"],
+      "description": "e.g. NHS, GP, Self-reported, Social Worker"
+    },
+    "created_by": {
+      "type": ["string", "null"]
+    },
+    "source_description": {
+      "type": ["string", "null"]
+    },
+    "informed_resident": {
+      "type": "boolean",
+      "default": false
+    },
+    "alert_progress": {
+      "type": ["string", "null"],
+      "enum": ["Stable", "Improving", "Deteriorating", "Fluctuating", "Unknown", null]
+    },
+    "alert_duration_type": {
+      "type": ["string", "null"],
+      "enum": ["Long Term", "Temporary", "Unknown", null]
+    },
+    "alert_duration": {
+      "type": ["integer", "null"],
+      "description": "Duration in days if known (e.g. 30 for temporary)"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "review_date": {
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time",
+      "default": "now"
+    },
+    "updated_by": {
+      "type": ["string", "null"]
     }
   },
-  "required": ["PersonAlertCodes", "PersonAlert"]
+  "required": [
+    "person_id",
+    "alert_code_id",
+    "start_date"
+  ],
+  "person_alert_code": {
+    "type": "object",
+    "properties": {
+      "alert_code_id": {
+        "type": "integer",
+        "description": "Unique internal ID"
+      },
+      "alert_code": {
+        "type": "string",
+        "description": "Top-level code (e.g. MED1)"
+      },
+      "alert_subcode": {
+        "type": "string",
+        "description": "Subcode (e.g. MED1.01)"
+      },
+      "alert_category": {
+        "type": "string",
+        "description": "Category of alert (e.g. Medical, Risk, Environmental etc)"
+      },
+      "alert_name": {
+        "type": "string",
+        "description": "Medical condition or risk type"
+      },
+      "alert_subname": {
+        "type": ["string", "null"],
+        "description": "Specific condition or risk"
+      },
+      "is_critical": {
+        "type": "boolean",
+        "default": false
+      },
+      "is_awaab_relevant": {
+        "type": "boolean",
+        "default": false
+      },
+      "repairs_impact": {
+        "type": ["string", "null"],
+        "enum": ["High", "Medium", "Low", "None", null]
+      },
+      "support_required": {
+        "type": ["string", "null"],
+        "description": "e.g. Use interpreter, Extra ventilation checks"
+      }
+    },
+    "required": [
+      "alert_code",
+      "alert_subcode",
+      "alert_name"
+    ]
+  }
 }
