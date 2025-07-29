@@ -117,23 +117,23 @@ INSERT INTO person_alert_codes (
 -- MENTAL HEALTH CONDITIONS
 ----------------------------------------------------------------------------------------------------------------------------------------------
 -- MENTAL HEALTH
-('MTH1', 'MTH1.01', 'Mental Health', 'Mental Health', 'Severe Anxiety / Panic', FALSE, TRUE, 'Medium', 'Use written contact methods'),
-('MTH1', 'MTH1.02', 'Mental Health', 'Mental Health', 'Paranoia / Psychosis', TRUE, TRUE, 'High', 'Provide detailed visit explanations'),
-('MTH1', 'MTH1.03', 'Mental Health', 'Mental Health', 'Depression (Severe or Recurrent)', FALSE, TRUE, 'Medium', 'Check for missed appointments; offer support referrals'),
-('MTH1', 'MTH1.04', 'Mental Health', 'Mental Health', 'Bipolar Disorder', FALSE, TRUE, 'Medium', 'Monitor communication style; confirm understanding'),
-('MTH1', 'MTH1.05', 'Mental Health', 'Mental Health', 'Schizophrenia / Thought Disorder', TRUE, TRUE, 'High', 'Avoid sudden visits; provide support staff presence');
-('MTH1', 'MTH1.06', 'Mental Health', 'Self-harm', 'Self-Harm History', TRUE, TRUE, 'High', 'Coordinate with support services before visits'),
-('MTH1', 'MTH1.07', 'Mental Health', 'Suicidal', 'Suicidal Ideation', TRUE, TRUE, 'High', 'Coordinate with support services before visits'),
-('MTH1', 'MTH1.08', 'Mental Health', 'Substance Use', 'Substance Use (Recovery or Active)', TRUE, TRUE, 'Medium', 'Be alert to environment risks; liaise with support staff'),
-('MTH1', 'MTH1.09', 'Mental Health', 'Trauma', 'PTSD / Trauma Trigger Risk', TRUE, TRUE, 'Medium', 'Avoid uniformed visits; use trauma-informed contact'),
+('MH1', 'MH1.01', 'Mental Health', 'Mental Health', 'Severe Anxiety / Panic', FALSE, TRUE, 'Medium', 'Use written contact methods'),
+('MH1', 'MH1.02', 'Mental Health', 'Mental Health', 'Paranoia / Psychosis', TRUE, TRUE, 'High', 'Provide detailed visit explanations'),
+('MH1', 'MH1.03', 'Mental Health', 'Mental Health', 'Depression (Severe or Recurrent)', FALSE, TRUE, 'Medium', 'Check for missed appointments; offer support referrals'),
+('MH1', 'MH1.04', 'Mental Health', 'Mental Health', 'Bipolar Disorder', FALSE, TRUE, 'Medium', 'Monitor communication style; confirm understanding'),
+('MH1', 'MH1.05', 'Mental Health', 'Mental Health', 'Schizophrenia / Thought Disorder', TRUE, TRUE, 'High', 'Avoid sudden visits; provide support staff presence');
+('MH1', 'MH1.06', 'Mental Health', 'Self-harm', 'Self-Harm History', TRUE, TRUE, 'High', 'Coordinate with support services before visits'),
+('MH1', 'MH1.07', 'Mental Health', 'Suicidal', 'Suicidal Ideation', TRUE, TRUE, 'High', 'Coordinate with support services before visits'),
+('MH1', 'MH1.08', 'Mental Health', 'Substance Use', 'Substance Use (Recovery or Active)', TRUE, TRUE, 'Medium', 'Be alert to environment risks; liaise with support staff'),
+('MH1', 'MH1.09', 'Mental Health', 'Trauma', 'PTSD / Trauma Trigger Risk', TRUE, TRUE, 'Medium', 'Avoid uniformed visits; use trauma-informed contact'),
 
 -- COGNITIVE & DEVELOPMENTAL NEEDS
-('MTH2', 'MTH2.01', 'Mental Health', 'Cognitive & Developmental', 'Learning Disability', FALSE, TRUE, 'Medium', 'Use Easy Read or plain language'),
-('MTH2', 'MTH2.02', 'Mental Health', 'Cognitive & Developmental', 'Dementia / Memory Loss', FALSE, TRUE, 'Medium', 'Confirm contact with carer'),
-('MTH2', 'MTH2.03', 'Mental Health', 'Cognitive & Developmental', 'Autism / Sensory Sensitivity', FALSE, TRUE, 'Medium', 'Minimise noise/disruption; avoid unplanned visits'),
-('MTH2', 'MTH2.04', 'Mental Health', 'Cognitive & Developmental', 'ADHD / Executive Functioning Needs', FALSE, FALSE, 'Low', 'Give reminders and timeframes in writing'),
-('MTH2', 'MTH2.05', 'Mental Health', 'Cognitive & Developmental', 'Mental Capacity Concerns', TRUE, TRUE, 'High', 'Liaise with carer or advocate; confirm legal rep'),
-('MTH2', 'MTH2.06', 'Mental Health', 'Cognitive & Developmental', 'Challenging Behaviour Risk', TRUE, TRUE, 'High', 'Ensure staff trained in de-escalation techniques'),
+('MH2', 'MH2.01', 'Mental Health', 'Cognitive & Developmental', 'Learning Disability', FALSE, TRUE, 'Medium', 'Use Easy Read or plain language'),
+('MH2', 'MH2.02', 'Mental Health', 'Cognitive & Developmental', 'Dementia / Memory Loss', FALSE, TRUE, 'Medium', 'Confirm contact with carer'),
+('MH2', 'MH2.03', 'Mental Health', 'Cognitive & Developmental', 'Autism / Sensory Sensitivity', FALSE, TRUE, 'Medium', 'Minimise noise/disruption; avoid unplanned visits'),
+('MH2', 'MH2.04', 'Mental Health', 'Cognitive & Developmental', 'ADHD / Executive Functioning Needs', FALSE, FALSE, 'Low', 'Give reminders and timeframes in writing'),
+('MH2', 'MH2.05', 'Mental Health', 'Cognitive & Developmental', 'Mental Capacity Concerns', TRUE, TRUE, 'High', 'Liaise with carer or advocate; confirm legal rep'),
+('MH2', 'MH2.06', 'Mental Health', 'Cognitive & Developmental', 'Challenging Behaviour Risk', TRUE, TRUE, 'High', 'Ensure staff trained in de-escalation techniques'),
 
 -- PREGNANCY CONDITIONS
 ('PREG1', 'PREG1.01', 'Pregnancy', 'Pregnancy', 'Normal Pregnancy', FALSE, FALSE, 'Low', 'Provide pregnancy-friendly environment and access to antenatal care'),
