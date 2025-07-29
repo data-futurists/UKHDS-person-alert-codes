@@ -2,10 +2,10 @@ CREATE TABLE person_alert (
     person_alert_id INTEGER PRIMARY KEY AUTOINCREMENT, -- Unique ID for this alert instance
     person_id NOT NULL,                                -- FK to person table (not defined here)
     alert_code_id NOT NULL,                            -- FK to person_alert_codes table
-
+    alert_source_id VARCHAR(100),                      -- E.g. NHS, GP, Self-reported, Social Worker
     alert_description TEXT,                            -- Optional: case-specific notes
-    alert_source VARCHAR(100),                         -- E.g. NHS, GP, Self-reported, Social Worker
-    created_by VARCHAR(100),                           -- Who created the alert - individual name
+    
+    created_by_user_id VARCHAR(100),                   -- the user_id of the person who created the alert
     source_description TEXT,                           -- E.g. a specific GP, Hospital, or social worker
     informed_resident BOOLEAN DEFAULT FALSE,           -- Was the tenant informed?
     
@@ -24,20 +24,81 @@ CREATE TABLE person_alert (
     review_date DATE,                                  -- Optional periodic review
     active BOOLEAN DEFAULT TRUE,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(100),                           -- Who last updated the alert
+    updated_by_user_id VARCHAR(100),                           -- the user_id of the person who last updated the alert
     CONSTRAINT unique_person_alert UNIQUE (person_id, alert_code_id),
     CONSTRAINT fk_alert_code FOREIGN KEY (alert_code_id) REFERENCES person_alert_codes(alert_code_id),
-    CONSTRAINT fk_person FOREIGN KEY (person_id) REFERENCES person(person_id)
+    CONSTRAINT fk_person FOREIGN KEY (person_id) REFERENCES person(person_id),
+    CONSTRAINT fk_alert_source FOREIGN KEY (alert_source_id) REFERENCES alert_source_types(source_type_id),
+    CONSTRAINT fk_user FOREIGN KEY (created_by_user_id) REFERENCES users(user_id)
+    CONSTRAINT fk_updated_by_user FOREIGN KEY (updated_by_user_id) REFERENCES users(user_id),
 );
 
+CREATE TABLE person_alert_history (
+    person_alert_history_id SERIAL PRIMARY KEY,
+    person_alert_id INTEGER NOT NULL,
+    action_type VARCHAR(10) NOT NULL CHECK (action_type IN ('INSERT', 'UPDATE', 'DELETE')),
+    changed_by INTEGER,
+    change_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    change_summary TEXT,
+    CONSTRAINT fk_person_alert FOREIGN KEY (person_alert_id) REFERENCES person_alert(person_alert_id),
+    CONSTRAINT fk_changed_by FOREIGN KEY (changed_by) REFERENCES users(user_id)    
 );
+
+
+CREATE TABLE users (
+    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
+    email VARCHAR(100),
+    role VARCHAR(50),                     -- e.g. admin, housing_officer, clinician
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+-- Lookup table: Standard sources of person alerts
+CREATE TABLE alert_source_types (
+    source_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_code VARCHAR(10) NOT NULL UNIQUE,                -- Short code (e.g. GP, SW)
+    source_label VARCHAR(100) NOT NULL,                     -- Full name (e.g. General Practitioner)
+    description TEXT                                        -- Optional notes 
+);
+
+-- Populate the table with initial values
+INSERT INTO source_types (source_code, source_label, description) 
+VALUES
+('GP', 'General Practitioner', 'Alert submitted by tenants NHS GP or primary care physician'),
+('SELF', 'Tenant (Self-Reported)', 'Alert reported directly by the tenant'),
+('SW', 'Social Worker', 'Alert raised by a local authority or medical social worker'),
+('POL', 'Police', 'Alert triggered by an incident involving law enforcement'),
+('REL', 'Relative / Carer / Guardian', 'Alert reported by a family member or legal guardian'),
+('HO', 'Housing Officer', 'Housing staff who observed or received tenant information'),
+('OTH', 'Other Professional', 'Any other professional (e.g. school nurse, mental health team)'),
+('UNK', 'Unknown', 'Source of the alert not recorded or unknown');
+
+CREATE TABLE alert_categories (
+    alert_category_id SERIAL PRIMARY KEY,
+    alert_category_name VARCHAR(50) UNIQUE NOT NULL
+);
+
+INSERT INTO alert_categories (alert_category_name) VALUES
+('Medical'),
+('Risk'),
+('Environmental'),
+('Safeguarding'),
+('Mental Health'),
+('Pregnancy'),
+('Age Group'),
+('Communication Needs'),
+('Other');
+('Unknown');
+
 
 CREATE TABLE person_alert_codes (
     alert_code_id INTEGER PRIMARY KEY AUTOINCREMENT,        -- Unique internal ID
     alert_code VARCHAR(10) NOT NULL,                        -- Top-level code (e.g. MED1)
     alert_subcode VARCHAR(15) NOT NULL,                     -- Subcode (e.g. MED1.01)
     
-    alert_category VARCHAR(50),                             -- Category of alert (e.g. Medical, Risk, Environmental etc)
+    alert_category_id VARCHAR(50),                          -- FK to alert_categories table
     alert_name VARCHAR(100) NOT NULL,                       -- Medical condition or risk type (e.g. "Respiratory Condition")
     alert_subname VARCHAR(100),                             -- Name of specific condition or risk (e.g. "Asthma")
             
@@ -46,11 +107,9 @@ CREATE TABLE person_alert_codes (
     is_awaab_relevant BOOLEAN DEFAULT FALSE,                -- If relevant to Awaab’s Law, to link to the hazards list 
     repairs_impact VARCHAR(10) CHECK (repairs_impact IN ('High', 'Medium', 'Low', 'None')),
     support_required TEXT,                                  -- e.g. "Use interpreter", "Extra ventilation checks"
-
-          
-
-    CONSTRAINT unique_alert_pair UNIQUE (alert_code, alert_subcode)
-);
+    CONSTRAINT fk_alert_category FOREIGN KEY (alert_category_id) REFERENCES alert_categories(alert_category_id),
+    CONSTRAINT unique_alert_code UNIQUE (alert_code, alert_subcode)
+    );
 
 INSERT INTO person_alert_codes (
     alert_code, alert_subcode, alert_category, alert_name, alert_subname, 
@@ -114,6 +173,21 @@ INSERT INTO person_alert_codes (
 ('MED7', 'MED7.10', 'Medical', 'Other Chronic Condition', 'Other Chronic Health Condition', FALSE, FALSE, 'Low', 'Ensure access to regular health and social care support');
 
 ----------------------------------------------------------------------------------------------------------------------------------------------
+-- PREGNANCY CONDITIONS
+----------------------------------------------------------------------------------------------------------------------------------------------
+-- PREGNANCY
+('PREG1', 'PREG1.01', 'Pregnancy', 'Pregnancy', 'Normal Pregnancy', FALSE, FALSE, 'Low', 'Provide pregnancy-friendly environment and access to antenatal care'),
+('PREG1', 'PREG1.02', 'Pregnancy', 'Pregnancy', 'High-Risk Pregnancy', TRUE, TRUE, 'High', 'Ensure priority access to medical care and emergency support'),
+('PREG1', 'PREG1.03', 'Pregnancy', 'Pregnancy', 'Gestational Diabetes', TRUE, TRUE, 'High', 'Support access to glucose monitoring and dietary management'),
+('PREG1', 'PREG1.04', 'Pregnancy', 'Pregnancy', 'Pre-eclampsia', TRUE, TRUE, 'High', 'Ensure rapid medical intervention access and safe environment'),
+('PREG1', 'PREG1.05', 'Pregnancy', 'Pregnancy', 'Multiple Pregnancy (Twins or more)', FALSE, TRUE, 'Medium', 'Provide additional mobility and comfort support'),
+('PREG1', 'PREG1.06', 'Pregnancy', 'Pregnancy', 'Postpartum Depression Risk', TRUE, TRUE, 'Medium', 'Facilitate access to mental health support and community resources'),
+('PREG1', 'PREG1.07', 'Pregnancy', 'Pregnancy', 'Pregnancy-related Hypertension', TRUE, TRUE, 'High', 'Monitor blood pressure and ensure emergency care access'),
+('PREG1', 'PREG1.08', 'Pregnancy', 'Pregnancy', 'Premature Labour Risk', TRUE, TRUE, 'High', 'Ensure rapid response protocols and safe environment'),
+('PREG1', 'PREG1.09', 'Pregnancy', 'Pregnancy', 'Pregnancy with Chronic Condition (e.g. Diabetes, Cardiac)', TRUE, TRUE, 'High', 'Coordinate specialist medical and housing support'),
+('PREG1', 'PREG1.10', 'Pregnancy', 'Pregnancy', 'Other Pregnancy-Related Condition', FALSE, FALSE, 'Medium', 'Ensure regular medical follow-up and safe living conditions');
+
+----------------------------------------------------------------------------------------------------------------------------------------------
 -- MENTAL HEALTH CONDITIONS
 ----------------------------------------------------------------------------------------------------------------------------------------------
 -- MENTAL HEALTH
@@ -134,18 +208,6 @@ INSERT INTO person_alert_codes (
 ('MH2', 'MH2.04', 'Mental Health', 'Cognitive & Developmental', 'ADHD / Executive Functioning Needs', FALSE, FALSE, 'Low', 'Give reminders and timeframes in writing'),
 ('MH2', 'MH2.05', 'Mental Health', 'Cognitive & Developmental', 'Mental Capacity Concerns', TRUE, TRUE, 'High', 'Liaise with carer or advocate; confirm legal rep'),
 ('MH2', 'MH2.06', 'Mental Health', 'Cognitive & Developmental', 'Challenging Behaviour Risk', TRUE, TRUE, 'High', 'Ensure staff trained in de-escalation techniques'),
-
--- PREGNANCY CONDITIONS
-('PREG1', 'PREG1.01', 'Pregnancy', 'Pregnancy', 'Normal Pregnancy', FALSE, FALSE, 'Low', 'Provide pregnancy-friendly environment and access to antenatal care'),
-('PREG1', 'PREG1.02', 'Pregnancy', 'Pregnancy', 'High-Risk Pregnancy', TRUE, TRUE, 'High', 'Ensure priority access to medical care and emergency support'),
-('PREG1', 'PREG1.03', 'Pregnancy', 'Pregnancy', 'Gestational Diabetes', TRUE, TRUE, 'High', 'Support access to glucose monitoring and dietary management'),
-('PREG1', 'PREG1.04', 'Pregnancy', 'Pregnancy', 'Pre-eclampsia', TRUE, TRUE, 'High', 'Ensure rapid medical intervention access and safe environment'),
-('PREG1', 'PREG1.05', 'Pregnancy', 'Pregnancy', 'Multiple Pregnancy (Twins or more)', FALSE, TRUE, 'Medium', 'Provide additional mobility and comfort support'),
-('PREG1', 'PREG1.06', 'Pregnancy', 'Pregnancy', 'Postpartum Depression Risk', TRUE, TRUE, 'Medium', 'Facilitate access to mental health support and community resources'),
-('PREG1', 'PREG1.07', 'Pregnancy', 'Pregnancy', 'Pregnancy-related Hypertension', TRUE, TRUE, 'High', 'Monitor blood pressure and ensure emergency care access'),
-('PREG1', 'PREG1.08', 'Pregnancy', 'Pregnancy', 'Premature Labour Risk', TRUE, TRUE, 'High', 'Ensure rapid response protocols and safe environment'),
-('PREG1', 'PREG1.09', 'Pregnancy', 'Pregnancy', 'Pregnancy with Chronic Condition (e.g. Diabetes, Cardiac)', TRUE, TRUE, 'High', 'Coordinate specialist medical and housing support'),
-('PREG1', 'PREG1.10', 'Pregnancy', 'Pregnancy', 'Other Pregnancy-Related Condition', FALSE, FALSE, 'Medium', 'Ensure regular medical follow-up and safe living conditions');
 
 ------------------------------------------------------------------------------------------------------------------------------------------------
 -- AGE-BASED ALERTS
