@@ -1,45 +1,53 @@
-Table person_alert {
-  person_alert_id integer [pk, increment, note: "Unique ID for this alert instance"]
-  person_id integer [not null]
-  alert_code_id integer [not null, ref: > person_alert_codes.alert_code_id, note: "FK to person_alert_codes table"]
-
-  alert_description text [note: "Optional: case-specific notes"]
-  alert_source varchar(100) [note: "E.g. NHS, GP, Self-reported, Social Worker"]
-  created_by varchar(100) [note: "Who created the alert - individual name"]
-  source_description text [note: "E.g. a specific GP, Hospital, or social worker"]
-  informed_resident boolean [default: false, note: "Was the tenant informed?"]
-
-  alert_progress varchar(20) [note: "Stable / Improving / Deteriorating / Fluctuating / Unknown"]
-  alert_duration_type varchar(20) [note: "Long Term / Temporary / Unknown"] 
-  alert_duration integer [note: "Duration in days if known (e.g. 30 for temporary)"]
-                       
-  start_date date [not null]
-  end_date date
-  review_date date
-  active boolean [default: true]
-  last_updated timestamp [default: `CURRENT_TIMESTAMP`]
-  updated_by varchar(100) [note: "Who last updated the alert"]
-
-  indexes {
-    (person_id, alert_code_id) [unique]
-  }
+Table person_alert_codes {
+  person_alert_code_id int [pk, increment]
+  alert_code varchar
+  alert_subcode varchar
+  alert_category_id int [ref: > alert_categories.alert_category_id]
+  alert_name varchar
+  alert_subname varchar [null]
+  is_critical boolean [default: false]
+  is_awaab_relevant boolean [default: false]
+  repairs_impact varchar [null, note: 'Enum: High, Medium, Low, None']
+  support_required varchar [null]
 }
 
-Table person_alert_codes {
-  alert_code_id integer [pk, increment, note: "Unique internal ID"]
-  alert_code varchar(10) [not null, note: "Top-level code (e.g. MED1)"]
-  alert_subcode varchar(15) [not null, note: "Subcode (e.g. MED1.01)"]
+Table alert_categories {
+  alert_category_id int [pk, increment]
+  alert_category_name varchar
+}
 
-  alert_category varchar(50) [note: "Category of alert (e.g. Medical, Risk, Environmental etc)"]
-  alert_name varchar(100) [not null, note: "Medical condition or risk type"]
-  alert_subname varchar(100) [note: "Specific condition or risk"]
+Table source_types {
+  source_type_id int [pk, increment]
+  source_code varchar
+  source_name varchar
+  description varchar [null]
+}
 
-  is_critical boolean [default: false]
-  is_awaab_relevant boolean [default: false, note: "If relevant to Awaab’s Law"]
-  repairs_impact varchar(10) [note: "High / Medium / Low / None"]
-  support_required text [note: "e.g. Use interpreter, Extra ventilation checks"]
+Table person_alert {
+  person_alert_id int [pk, increment]
+  person_id int
+  person_alert_code_id int [ref: > person_alert_codes.person_alert_code_id]
+  source_type_id int [ref: > source_types.source_type_id, null]
+  created_by_user_id varchar [null]
+  source_details varchar [null]
+  alert_description varchar [null]
+  informed_resident boolean [default: false]
+  alert_progress varchar [null, note: 'Enum: Stable, Improving, Deteriorating, Fluctuating, Unknown']
+  alert_duration_type varchar [null, note: 'Enum: Long Term, Temporary, Unknown']
+  alert_duration int [null, note: 'Duration in days if known']
+  start_date date
+  end_date date [null]
+  review_date date [null]
+  active boolean [default: true]
+  last_updated timestamp
+  updated_by_user_id varchar [null]
+}
 
-  indexes {
-    (alert_code, alert_subcode) [unique]
-  }
+Table person_alert_history {
+  person_alert_history_id int [pk, increment]
+  person_alert_id int [ref: > person_alert.person_alert_id]
+  action_type varchar [note: 'Enum: INSERT, UPDATE, DELETE']
+  changed_by_user_id int
+  change_timestamp timestamp
+  change_summary varchar [null]
 }
