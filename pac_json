@@ -19,6 +19,12 @@
     "source_type_id": {
       "type": ["integer", "null"],
       "description": "Foreign key to source_types table"
+    
+    },
+    "organisation_id": {
+      "type": ["integer", "null"],
+      "description": "Foreign key to organisation table"
+    
     },
     "created_by_user_id": {
       "type": "integer",
@@ -69,7 +75,7 @@
       "format": "date-time"
     },
     "updated_by_user_id": {
-      "type": ["string", "null"],
+      "type": ["integer", "null"],
       "description": "User ID of the person who last updated the alert"
     }
   },

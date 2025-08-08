@@ -3,20 +3,21 @@ CREATE TABLE person_alert (
     person_id NOT NULL,                                -- FK to Person table (not defined here)
     person_alert_code_id NOT NULL,                            -- FK to person_alert_codes table
     source_type_id INTEGER(100),                      -- E.g. NHS, GP, Self-reported, Social Worker
-    created_by_user_id VARCHAR(100),                   -- the user_id of the person who created the alert links to Person table
+    organisation_id INTEGER(100),                     -- FK to Organisation table, if applicable (e.g. housing association, local authority)
+    created_by_user_id INTEGER(100),                   -- the user_id of the person who created the alert links to Person table
     
     source_details TEXT,                               -- E.g. a specific GP, Hospital, or social worker
     alert_description TEXT,                            -- Optional: case-specific notes
     informed_resident BOOLEAN DEFAULT FALSE,           -- Was the tenant informed?
     
-    alert_progress VARCHAR(20) CHECK (alert_progress IN (
+    alert_progress VARCHAR(20) CHECK (alert_progress IN (     --maybe alert_status
         'Stable',
         'Improving',
         'Deteriorating',
         'Fluctuating',
         'Unknown'
-    )),
-    alert_duration_type VARCHAR(20) CHECK (alert_duration_type IN ('Long Term', 'Temporary', 'Unknown')),
+    )), 
+    alert_duration_type VARCHAR(20) CHECK (alert_duration_type IN ('Short Term', 'Long Term', 'Temporary', 'Unknown')),
     alert_duration INTEGER,                            -- Duration in days if known (e.g. 30 for temporary)
 
     start_date DATE NOT NULL,
@@ -24,7 +25,7 @@ CREATE TABLE person_alert (
     review_date DATE,                                  -- Optional periodic review
     active BOOLEAN DEFAULT TRUE,
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_by_user_id VARCHAR(100),                           -- the user_id of the person who last updated the alert, links to Person table
+    updated_by_user_id INTEGER (100),                           -- the user_id of the person who last updated the alert, links to Person table
    
     CONSTRAINT fk_alert_code FOREIGN KEY (person_alert_code_id) REFERENCES person_alert_codes(person_alert_code_id),
     CONSTRAINT fk_person FOREIGN KEY (person_id) REFERENCES person(person_id),

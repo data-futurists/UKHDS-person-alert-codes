@@ -78,6 +78,16 @@ The `person_alert` table records individual alert instances associated with pers
 
 ---
 
+#### organisation_id
+- **What:** Links the alert to a specific organisation involved in raising or associated with the alert (e.g. GP practice, Local Authority, Police, NHS Trust).  
+- **How is it designed:** Foreign key to the organisation(organisation_id) table in line with HACT Housing Data Standards. Optional, as not all alerts originate from a formal organisation.
+- **How does it add value:** Enables identification and attribution of alerts to specific external or internal bodies. Enhances reporting, accountability, and supports integration with wider systems or partnership frameworks (e.g. safeguarding boards, multi-agency panels).
+- **Questions to ask:**  
+  - Should there be categories or types of organisations to support filtering or access control?  
+  - Should inactive or historical organisations remain linked for audit purposes?
+  - Who governs the list of valid organisations and updates the table?
+- **What alternatives were considered:** Using free-text fields to capture the organisation name – rejected due to data inconsistency and poor reporting quality.
+
 #### created_by_user_id
 - **What:** Reference to the person who created the alert record – usually a staff member.  
 - **How is it designed:** A foreign key pointing to the `person_id` field in the `person` table.  

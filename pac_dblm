@@ -28,7 +28,8 @@ Table person_alert {
   person_id int
   person_alert_code_id int [ref: > person_alert_codes.person_alert_code_id]
   source_type_id int [ref: > source_types.source_type_id, null]
-  created_by_user_id varchar [null]
+  organisation_id int
+  created_by_user_id int [null]
   source_details varchar [null]
   alert_description varchar [null]
   informed_resident boolean [default: false]
@@ -40,7 +41,7 @@ Table person_alert {
   review_date date [null]
   active boolean [default: true]
   last_updated timestamp
-  updated_by_user_id varchar [null]
+  updated_by_user_id int [null]
 }
 
 Table person_alert_history {
