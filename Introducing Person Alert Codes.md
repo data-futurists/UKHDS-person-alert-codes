@@ -38,11 +38,11 @@ The model includes core tables for managing alerts, their categories, codes, and
 
 ### Tables and their purpose
 
-1. person_alert - Stores active alerts about a specific person so staff can quickly see important issues affecting their safety, wellbeing, or housing needs.
-2. person_alert_codes - Holds the master list of all possible alert types with clear names and descriptions for consistent use across the organisation.
-3. alert_categories - Groups alert types into broader themes like Medical or Safeguarding so they’re easier to manage and report on.
-4. person_alert_history - Keeps a record of every change made to a person’s alert to maintain transparency and meet compliance requirements.
-5. source_types - Identifies where an alert came from (such as a GP or social worker) so the source is always clear for action and follow-up.
+1. **person_alert** - Stores active alerts about a specific person so staff can quickly see important issues affecting their safety, wellbeing, or housing needs.
+2. **person_alert_codes** - Holds the master list of all possible alert types with clear names and descriptions for consistent use across the organisation.
+3. **alert_categories** - Groups alert types into broader themes like Medical or Safeguarding so they’re easier to manage and report on.
+4. **person_alert_history** - Keeps a record of every change made to a person’s alert to maintain transparency and meet compliance requirements.
+5. **source_types** - Identifies where an alert came from (such as a GP or social worker) so the source is always clear for action and follow-up.
 
 ### Integration with other modules
 
