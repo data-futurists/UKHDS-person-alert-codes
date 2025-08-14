@@ -1,9 +1,22 @@
-# Person Alert Code  
-**Design Decisions**  
-**Proposed Sector-Wide Standard for Housing Providers (HACT/MHCLG aligned)**  
+# Design Decisions  
+**Person Alert Codes**  
+**Proposed Sector-Wide Standard for Housing Providers**  
 **Version:** Draft v1.0  
 **Prepared by:** Elena Iurco  
-**Date:** 25 July 2025  
+**Date:** 14/08/2025 July 2025  
+
+---
+## Table of Contents
+
+- [Core Tables](#core-tables)  
+  - [person_alert](#person_alert)  
+  - [person_alert_history](#person_alert_history)  
+
+- [Lookup Tables](#look-up-tables)  
+  - [person_alert_codes](#person_alert_codes)  
+  - [alert_categories](#alert_categories)  
+  - [source_types](#source_types)
+
 
 ---
 
@@ -20,7 +33,7 @@ This module tracks alerts related to persons within a housing and social care co
 
 ## Core Tables
 
-### 1. person_alert
+## person_alert
 
 **Purpose:**  
 The `person_alert` table records individual alert instances associated with persons (tenants, household members, staff, etc.). Each alert corresponds to a specific alert code (e.g., health condition, risk, safeguarding concern) and includes contextual information such as the alert source, status, duration, and progress.
@@ -87,6 +100,8 @@ The `person_alert` table records individual alert instances associated with pers
   - Should inactive or historical organisations remain linked for audit purposes?
   - Who governs the list of valid organisations and updates the table?
 - **What alternatives were considered:** Using free-text fields to capture the organisation name – rejected due to data inconsistency and poor reporting quality.
+
+---
 
 #### created_by_user_id
 - **What:** Reference to the person who created the alert record – usually a staff member.  
@@ -234,7 +249,7 @@ The `person_alert` table records individual alert instances associated with pers
 
 ---
 
-## 2. person_alert_history
+## person_alert_history
 
 ### Purpose:
 Tracks all meaningful changes made to `person_alert` records for auditability, compliance, and accountability. This is especially important in housing and safeguarding scenarios, where decisions or oversights can have significant consequences for tenants or household members.
@@ -243,6 +258,8 @@ Tracks all meaningful changes made to `person_alert` records for auditability, c
 - Enables a transparent audit trail of actions taken on alerts (e.g., who changed the status and how).
 - Provides an immutable history of interactions for regulatory, legal, or QA review.
 - Supports reporting on user behaviour, system changes, and alert lifecycle.
+
+---
 
 ### Fields
 
@@ -302,7 +319,7 @@ Tracks all meaningful changes made to `person_alert` records for auditability, c
 
 ## Look-up Tables
 
-## 1. person_alert_codes
+## person_alert_codes
 
 ### Purpose:
 Stores a standardised reference list of alert codes representing medical or safeguarding conditions, vulnerabilities, and risk types that may impact housing services, repairs, or tenant wellbeing. It categorizes alerts into hierarchies (code/subcode) and aligns them to categories such as Medical, Risk, Safeguarding, etc.
@@ -413,9 +430,46 @@ This lookup table aims to enable consistency across data entry, analysis, integr
 
 ---
 
-## Look-up Tables
+## alert_categories
 
-## 2. source_types
+### Purpose  
+The `alert_categories` table defines the high-level classifications of alerts, such as **Medical**, **Mental Health**, **Risk**, or **Safeguarding**. These categories group related alert codes into broader themes for reporting, filtering, role-based access control, and operational workflows.  
+This lookup table supports standardisation across the `person_alert_codes` table (via the `alert_category_id` foreign key), ensuring consistent categorisation of tenant risks or support needs. It also supports integration across modules like repairs, tenancy, or health and safety.
+
+### Considerations  
+- **Data Normalisation:** Prevents inconsistent manual entry of categories like "medical", "MED", or "med condition".  
+- **UI & UX Benefits:** Allows dropdowns or filtering tools in the interface to use friendly names with consistent IDs.  
+- **Governance:** Aids in future data governance and analytics by encouraging consistency across systems.  
+- **Access Control:** May be used in the application layer to restrict access to sensitive categories (e.g. Safeguarding).  
+- **Extensibility:** New categories can be added through data governance processes without schema changes.  
+- **Interoperability:** Supports mapping to national or organisational data standards (e.g., HACT, MHCLG).  
+- **Fallback Options:** Includes an "Unknown" category to handle legacy or incomplete data.  
+
+---
+
+### Fields
+
+#### alert_category_id  
+- **What:** Unique internal ID for each alert category.  
+- **How is it designed:** Auto-incrementing integer, serves as the primary key.  
+- **How does it add value:** Supports foreign key relationships to other tables (e.g. `person_alert_codes`) for consistency and performance.  
+- **Questions to ask:** Should these IDs ever be exposed to users, or remain hidden behind friendly names?  
+- **What alternatives were considered:** Using the name itself as the key (e.g. ENUM) was discarded to maintain flexibility and avoid issues with renaming.  
+
+---
+
+#### alert_category_name  
+- **What:** Human-readable name of the category (e.g. "Mental Health", "Safeguarding").  
+- **How is it designed:** `VARCHAR(50)`, enforced as UNIQUE NOT NULL.  
+- **How does it add value:** Ensures clarity and usability in dropdowns, filters, reports, and UI.  
+- **Questions to ask:** Should descriptions also be included?  
+- **What alternatives were considered:**  
+  - Using abbreviations or codes instead of full labels - rejected in favour of clarity.  
+  - ENUMs - not chosen to allow easier updates without schema changes.
+
+---
+
+## source_types
 
 ### Purpose:
 The `source_types` table standardises the classification of sources from which a person alert originates. This includes professionals like GPs, social workers, and police, as well as self-reported alerts from tenants or family members. 
@@ -472,37 +526,4 @@ It supports both analytical reporting (e.g., frequency of alerts from health ser
 
 ---
 
-## 3. alert_categories
 
-### Purpose  
-The `alert_categories` table defines the high-level classifications of alerts, such as **Medical**, **Mental Health**, **Risk**, or **Safeguarding**. These categories group related alert codes into broader themes for reporting, filtering, role-based access control, and operational workflows.  
-This lookup table supports standardisation across the `person_alert_codes` table (via the `alert_category_id` foreign key), ensuring consistent categorisation of tenant risks or support needs. It also supports integration across modules like repairs, tenancy, or health and safety.
-
-### Considerations  
-- **Data Normalisation:** Prevents inconsistent manual entry of categories like "medical", "MED", or "med condition".  
-- **UI & UX Benefits:** Allows dropdowns or filtering tools in the interface to use friendly names with consistent IDs.  
-- **Governance:** Aids in future data governance and analytics by encouraging consistency across systems.  
-- **Access Control:** May be used in the application layer to restrict access to sensitive categories (e.g. Safeguarding).  
-- **Extensibility:** New categories can be added through data governance processes without schema changes.  
-- **Interoperability:** Supports mapping to national or organisational data standards (e.g., HACT, MHCLG).  
-- **Fallback Options:** Includes an "Unknown" category to handle legacy or incomplete data.  
-
-### Fields
-
-#### alert_category_id  
-- **What:** Unique internal ID for each alert category.  
-- **How is it designed:** Auto-incrementing integer, serves as the primary key.  
-- **How does it add value:** Supports foreign key relationships to other tables (e.g. `person_alert_codes`) for consistency and performance.  
-- **Questions to ask:** Should these IDs ever be exposed to users, or remain hidden behind friendly names?  
-- **What alternatives were considered:** Using the name itself as the key (e.g. ENUM) was discarded to maintain flexibility and avoid issues with renaming.  
-
----
-
-#### alert_category_name  
-- **What:** Human-readable name of the category (e.g. "Mental Health", "Safeguarding").  
-- **How is it designed:** `VARCHAR(50)`, enforced as UNIQUE NOT NULL.  
-- **How does it add value:** Ensures clarity and usability in dropdowns, filters, reports, and UI.  
-- **Questions to ask:** Should descriptions also be included?  
-- **What alternatives were considered:**  
-  - Using abbreviations or codes instead of full labels - rejected in favour of clarity.  
-  - ENUMs - not chosen to allow easier updates without schema changes.
