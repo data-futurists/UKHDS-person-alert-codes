@@ -1,10 +1,10 @@
 # Introduction to Person Alert Codes
 
 ## Table of contents
-- [Introduction](Introduction)
-- Objectives
-- What's included in the model
-- How the model can help you in future
+- [Introduction](#introduction)
+- [Objectives](#objectives)
+- [What's included in the data model](#whats-included-in-the-data-model)
+- [How the data model can help you in future](#how-the-data-model-can-help-you-in-the-future)
 
 ## Introduction
 
@@ -32,7 +32,7 @@ The Person Alert Codes Data Model has been developed in line with the Housing Da
 * Facilitate role-based access control to protect sensitive data.
 * Comply with statutory duties, such as those arising from Awaab's Law, the Equality Act 2010, and safeguarding regulations.
 
-## What's included in the Model
+## What's included in the data model
 
 The model includes core tables for managing alerts, their categories, codes, and history, with foreign keys to related tables such as person, organisation, and source types. It supports auditability with created/updated by fields, progress tracking, and effective dating.
 
@@ -48,6 +48,6 @@ The model includes core tables for managing alerts, their categories, codes, and
 
 Alerts integrate with other housing modules, influencing repairs priorities and contractor instructions, guiding tenancy support and risk assessments, and surfacing in CRM systems to flag special requirements during contact. This ensures that vital information is shared across teams for coordinated and responsive service delivery.
 
-## How the model can help you in the future
+## How the data model can help you in the future
 
 This model equips housing associations with a standardised, scalable framework for capturing and managing person-specific alerts, ensuring critical health, safety, and support information is consistently recorded and easily accessible across systems. By integrating seamlessly with existing housing, repairs, and CRM modules, it enables more informed decision-making, proactive risk management, and targeted service delivery. Over time, the structured and well-governed data will support advanced analytics, AI-driven insights, and automation, helping organisations predict needs, prioritise resources, and improve tenant outcomes while meeting regulatory and safeguarding obligations.
