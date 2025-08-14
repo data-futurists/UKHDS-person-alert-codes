@@ -8,14 +8,15 @@
 ---
 ## Table of Contents
 
-– [Core Tables](#core-tables)
-    – [person_alert](#person_alert)  
-    – [person_alert_history](#person_alert_history)  
+- [Core Tables](#core-tables)  
+  - [person_alert](#person_alert)  
+  - [person_alert_history](#person_alert_history)  
 
-– [Lookup Tables](#lookup-tables) 
-    – [person_alert_codes](#person_alert_codes)  
-    – [alert_categories](#alert_categories)  
-    – [source_types](#source_types)
+- [Lookup Tables](#look-up-tables)  
+  - [person_alert_codes](#person_alert_codes)  
+  - [alert_categories](#alert_categories)  
+  - [source_types](#source_types)
+
 
 ---
 
@@ -99,6 +100,8 @@ The `person_alert` table records individual alert instances associated with pers
   - Should inactive or historical organisations remain linked for audit purposes?
   - Who governs the list of valid organisations and updates the table?
 - **What alternatives were considered:** Using free-text fields to capture the organisation name – rejected due to data inconsistency and poor reporting quality.
+
+---
 
 #### created_by_user_id
 - **What:** Reference to the person who created the alert record – usually a staff member.  
@@ -255,6 +258,8 @@ Tracks all meaningful changes made to `person_alert` records for auditability, c
 - Enables a transparent audit trail of actions taken on alerts (e.g., who changed the status and how).
 - Provides an immutable history of interactions for regulatory, legal, or QA review.
 - Supports reporting on user behaviour, system changes, and alert lifecycle.
+
+---
 
 ### Fields
 
@@ -439,6 +444,8 @@ This lookup table supports standardisation across the `person_alert_codes` table
 - **Extensibility:** New categories can be added through data governance processes without schema changes.  
 - **Interoperability:** Supports mapping to national or organisational data standards (e.g., HACT, MHCLG).  
 - **Fallback Options:** Includes an "Unknown" category to handle legacy or incomplete data.  
+
+---
 
 ### Fields
 
