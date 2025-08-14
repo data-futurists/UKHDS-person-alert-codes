@@ -8,13 +8,11 @@
 ---
 ## Table of Contents
 
-– [Core Tables](#core-tables)  
-
+– [Core Tables](#core-tables)
     – [person_alert](#person_alert)  
     – [person_alert_history](#person_alert_history)  
 
 – [Lookup Tables](#lookup-tables) 
-
     – [person_alert_codes](#person_alert_codes)  
     – [alert_categories](#alert_categories)  
     – [source_types](#source_types)
