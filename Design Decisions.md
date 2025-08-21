@@ -16,6 +16,7 @@
   - [person_alert_codes](#person_alert_codes)  
   - [alert_categories](#alert_categories)  
   - [source_types](#source_types)
+  - [special_category_data_types](#sspecial_category_data_types)
 
 
 ---
@@ -210,7 +211,7 @@ The `person_alert` table records individual alert instances associated with pers
 
 ---
 
-#### active
+#### is_active
 - **What:** Whether the alert is currently in effect.  
 - **How is it designed:** Boolean, defaulting to `TRUE`.  
 - **How does it add value:** Allows alerts to remain in the record but inactive. Allows filtering of current versus historical alerts easily.  
@@ -224,6 +225,18 @@ The `person_alert` table records individual alert instances associated with pers
   - Or when a status field (if added later) changes to `"Resolved"` or `"Closed"`.  
 - Staff responsible for managing or reviewing alerts (e.g., housing officers or clinicians) should have exclusive access to change this field.  
 - Systems should prevent non-authorized users (e.g., contractors) from reactivating or deactivating alerts manually.
+
+---
+
+#### alert_status
+- **What:** Current status of the alert.  
+- **How is it designed:** Coded VARCHAR(20) with a CHECK constraint restricting values to: Open, Closed, Pending, In Review, Archived.
+- **How does it add value:** Provides a clear, standardised indicator of whether an alert is active, being assessed, or resolved. Helps staff quickly prioritise and manage cases.
+- **Questions to ask:**  
+  - Are these statuses sufficient for all operational scenarios?  
+  - Should additional statuses like Escalated or Follow-up Required be included?
+  - Should the system automatically change status based on activity or only allow manual updates?  
+- **What alternatives were considered:** Using a lookup table for status values instead of a fixed CHECK constraint, allowing easier updates or additions without modifying the schema.
 
 ---
 
@@ -260,6 +273,20 @@ The `person_alert` table records individual alert instances associated with pers
   - Using a lookup table (confidentiality_levels) with code + description for flexibility and future extensibility.
   - Storing levels in an RBAC/permissions model where access is tied directly to user roles rather than predefined categories.
   - Allowing custom, organisation-specific labels instead of a fixed set.
+
+---
+
+#### special_category_data_id
+- **What:** Links the alert to a specific type of special category data, if applicable (e.g., data types defined by ICO for sensitive information).
+- **How is it designed:** INTEGER referencing  `special_category_data_types` table to ensure consistent classification.
+- **How does it add value:** Allows staff to identify alerts containing sensitive or legally protected information, supporting compliance with data protection regulations and careful handling.
+- **Questions to ask:** 
+  - Should all alerts have the option to link to a special category, or only certain categories (e.g., Medical, Safeguarding)?
+  - How granular should the categories be to balance usability and legal compliance?
+- **What alternatives were considered:**
+  - Storing the category as a free-text field, which is more flexible but less structured and harder to report or enforce compliance.
+
+---
 
 ## person_alert_history
 
@@ -525,6 +552,58 @@ This lookup table supports standardisation across the `person_alert_codes` table
 - **What alternatives were considered:**  
   - Using abbreviations or codes instead of full labels - rejected in favour of clarity.  
   - ENUMs - not chosen to allow easier updates without schema changes.
+
+---
+
+## special_category_data_types
+
+### Purpose:
+Stores a standardised reference list of special category data types, inspired by ICO guidelines. These types represent sensitive or legally protected data associated with a person alert, enabling consistent handling, reporting, and compliance with data protection regulations.
+
+This lookup table ensures that alerts linked to sensitive data are clearly classified for staff awareness and operational decision-making.
+
+### Considerations:
+- This lookup table should be read-only in production and only editable by system administrators or data managers.
+- Expose a dropdown UI in forms based on `category_name` to guide staff in correctly classifying alerts.
+- Consider adding `date_added`, `last_reviewed`, and `status` fields for future versioning or updates.
+- Review category codes periodically to maintain compliance with legal requirements.
+
+---
+
+### Fields
+
+#### special_category_data_id
+- **What:** Unique internal identifier for each special category data type.  
+- **How is it designed:** Auto-incrementing primary key integer.  
+- **How does it add value:** Provides a unique reference for linking sensitive data types to alerts and ensuring consistent classification across the system. 
+- **Questions to ask:**  
+  - Should all alerts have the option to link to a special category, or only certain alert categories?  
+  - How granular should the categories be to balance usability and compliance? 
+- **What alternatives were considered:** Using `category_code` as a primary key; this was less flexible for joins and future expansion.
+
+#### category_code
+- **What:** Short, human-readable code representing the special category.  
+- **How is it designed:** `VARCHAR(20)` with a `UNIQUE` constraint.  
+- **How does it add value:** Ensures consistent reference in code, APIs, and reporting, avoiding ambiguity between similar categories.  
+- **Questions to ask:**  
+  - Should codes follow an internal naming convention aligned with ICO or organizational standards?  
+- **What alternatives were considered:** Free-text codes, which are prone to typos and inconsistent usage.
+
+#### category_name
+- **What:** Human-readable label for the special category.  
+- **How is it designed:** `VARCHAR(100)` and cannot be null.  
+- **How does it add value:** Provides clarity to staff when selecting or reviewing categories linked to alerts.  
+- **Questions to ask:**  
+  - Should names be short or descriptive for easier comprehension by non-technical users?  
+- **What alternatives were considered:** Using code-only display; less user-friendly.
+
+#### description
+- **What:** Optional textual explanation of the special category.  
+- **How is it designed:** `TEXT` type, nullable.  
+- **How does it add value:** Provides context for staff or auditors about the purpose or legal relevance of the category.  
+- **Questions to ask:**  
+  - Should this include links to relevant legal guidance or internal policies? 
+- **What alternatives were considered:** Not including a description; easier to maintain but reduces clarity for end-users.
 
 ---
 
