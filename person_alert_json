@@ -2,177 +2,236 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://example.com/person_alert.schema.json",
   "title": "Person Alert",
+  "description": "Schema for managing person alerts in a UK housing context (e.g., medical, safeguarding, risk, communication needs). Designed to support HACT-aligned implementations, Awaab’s Law reporting relevance, and GDPR considerations.",
   "type": "object",
   "properties": {
     "person_alert_id": {
       "type": "integer",
-      "description": "Unique ID for this alert instance"
+      "description": "Unique identifier for this alert record (system-generated)."
     },
     "person_id": {
       "type": "integer",
-      "description": "Foreign key to the person table"
+      "description": "Foreign key to the person table. Links the alert to a specific tenant/resident."
     },
     "person_alert_code_id": {
       "type": "integer",
-      "description": "Foreign key to person_alert_codes table"
+      "description": "Foreign key to person_alert_codes, which defines the specific alert (e.g., Asthma, Risk of Violence, Communication Need)."
     },
     "source_type_id": {
       "type": ["integer", "null"],
-      "description": "Foreign key to source_types table"
-    
+      "description": "Foreign key to source_types. Identifies who reported/created the alert (e.g., GP, Social Worker, Housing Officer, Self-reported). Null if not captured."
     },
     "organisation_id": {
       "type": ["integer", "null"],
-      "description": "Foreign key to organisation table"
-    
+      "description": "Foreign key to organisation table. The associated organisation for the alert (e.g., housing association, local authority, NHS trust). Null if not applicable."
     },
     "created_by_user_id": {
       "type": "integer",
-      "description": "User ID of the person who created the alert"
+      "description": "User ID of the staff member who created the alert. Used for accountability and audit."
     },
     "source_details": {
       "type": ["string", "null"],
-      "description": "Details about the specific source (e.g. specific GP or social worker)"
+      "description": "Free-text details about the reporting source (e.g., 'Dr. Smith, St Mary’s Hospital', named social worker). Optional."
     },
     "alert_description": {
       "type": ["string", "null"],
-      "description": "Case-specific notes"
+      "description": "Optional case-specific notes providing context beyond the coded definition (e.g., triggers, accommodations agreed)."
     },
     "informed_resident": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": "Indicates whether the resident/tenant was informed that this alert was recorded. Supports transparency and GDPR compliance."
     },
     "alert_progress": {
       "type": ["string", "null"],
-      "enum": ["Stable", "Improving", "Deteriorating", "Fluctuating", "Unknown", null]
+      "enum": ["Stable", "Improving", "Deteriorating", "Fluctuating", "Unknown", null],
+      "description": "Tracks how the condition/risk is changing over time:\n- Stable: No change observed\n- Improving: Situation is getting better\n- Deteriorating: Situation is worsening\n- Fluctuating: Situation varies significantly\n- Unknown: Progress not recorded"
     },
     "alert_duration_type": {
       "type": ["string", "null"],
-      "enum": ["Long Term", "Temporary", "Unknown", null]
+      "enum": ["Long Term", "Temporary", "Unknown", null],
+      "description": "Expected duration of the alert:\n- Long Term: Expected to persist indefinitely\n- Temporary: Expected to resolve after a period\n- Unknown: Duration not specified"
     },
     "alert_duration": {
       "type": ["integer", "null"],
-      "description": "Duration in days if known"
+      "description": "Duration in days if known (e.g., 30 for a temporary alert). Null if duration not specified."
     },
     "start_date": {
       "type": "string",
-      "format": "date"
+      "format": "date",
+      "description": "Date the alert became active or was first recorded (YYYY-MM-DD)."
     },
     "end_date": {
       "type": ["string", "null"],
-      "format": "date"
+      "format": "date",
+      "description": "Date the alert expired or was resolved (YYYY-MM-DD). Null if still active."
     },
     "review_date": {
       "type": ["string", "null"],
-      "format": "date"
+      "format": "date",
+      "description": "Scheduled review date (YYYY-MM-DD). Useful for safeguarding/periodic reviews."
     },
-    "active": {
+    "is_active": {
       "type": "boolean",
-      "default": true
+      "default": true,
+      "description": "Indicates whether the alert is currently active."
+    },
+    "alert_status": {
+      "type": "string",
+      "enum": ["Open", "Closed", "Pending", "In Review", "Archived"],
+      "description": "Workflow status of the alert:\n- Open: Active and in effect\n- Closed: No longer relevant/ended\n- Pending: Awaiting confirmation/approval\n- In Review: Under review (e.g., safeguarding)\n- Archived: Retained for historical/audit purposes"
     },
     "last_updated": {
       "type": "string",
-      "format": "date-time"
+      "format": "date-time",
+      "description": "Timestamp of the most recent update to the alert record (ISO 8601, e.g., 2025-08-21T10:30:00Z)."
     },
     "updated_by_user_id": {
       "type": ["integer", "null"],
-      "description": "User ID of the person who last updated the alert"
+      "description": "User ID of the staff member who last updated the record. Null if never updated after creation."
+    },
+    "confidentiality_level": {
+      "type": "string",
+      "enum": ["Public", "Private", "Restricted", "Confidential"],
+      "default": "Public",
+      "description": "Access control level:\n- Public: Visible to all housing staff\n- Private: Visible to assigned case worker/officer only\n- Restricted: Visible to safeguarding/medical-authorised staff\n- Confidential: Highest restriction; explicit approval required"
+    },
+    "special_category_data_id": {
+      "type": ["integer", "null"],
+      "description": "Foreign key to special_category_data_types. Flags if this alert contains GDPR 'special category data' (e.g., health information, safeguarding details). Null if not applicable."
     }
   },
-  "required": [
-    "person_id",
-    "person_alert_code_id",
-    "start_date"
-  ],
+  "required": ["person_id", "person_alert_code_id", "start_date"],
   "$defs": {
-    "person_alert_code": {
+    "person_alert_codes": {
+      "title": "Table: person_alert_codes",
+      "description": "Lookup table defining the standard set of alert codes used by housing providers, including category, criticality, repair implications, and support guidance.",
       "type": "object",
       "properties": {
         "person_alert_code_id": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Unique identifier for the alert code."
         },
         "alert_code": {
-          "type": "string"
+          "type": "string",
+          "description": "Top-level code (e.g., MED1, RISK2). Used for grouping and human-readable references."
         },
         "alert_subcode": {
-          "type": "string"
+          "type": "string",
+          "description": "Specific subcode (e.g., MED1.01 for Asthma). Enables fine-grained reporting and consistent usage."
         },
         "alert_category_id": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Foreign key to alert_categories. Defines the broad category (e.g., Medical, Risk, Communication Needs)."
         },
         "alert_name": {
-          "type": "string"
+          "type": "string",
+          "description": "General name of the alert (e.g., Respiratory Condition, Risk of Violence)."
         },
         "alert_subname": {
-          "type": ["string", "null"]
+          "type": ["string", "null"],
+          "description": "Specific condition/risk within the alert_name (e.g., Asthma, COPD). Null if the alert_name is already specific."
         },
         "is_critical": {
           "type": "boolean",
-          "default": false
+          "default": false,
+          "description": "Whether this alert represents a critical/high-risk issue requiring heightened attention."
         },
         "is_awaab_relevant": {
           "type": "boolean",
-          "default": false
+          "default": false,
+          "description": "Whether the alert is relevant to Awaab’s Law (e.g., respiratory conditions aggravated by damp/mould)."
         },
         "repairs_impact": {
           "type": ["string", "null"],
-          "enum": ["High", "Medium", "Low", "None", null]
+          "enum": ["High", "Medium", "Low", "None", null],
+          "description": "How the alert affects repairs and maintenance:\n- High: Significant impact; special procedures likely\n- Medium: Some impact; additional caution/adjustments\n- Low: Minimal impact\n- None: No impact on repairs\n- Null: Not assessed/not applicable"
         },
         "support_required": {
-          "type": ["string", "null"]
+          "type": ["string", "null"],
+          "description": "Guidance for staff (e.g., 'Use BSL interpreter', 'Two-person visit required', 'Extra ventilation checks')."
         }
       },
       "required": ["alert_code", "alert_subcode", "alert_name"]
     },
     "person_alert_history": {
+      "title": "Table: person_alert_history",
+      "description": "Audit trail capturing inserts, updates, and deletes to person_alert records for compliance, safeguarding, and operational transparency.",
       "type": "object",
       "properties": {
         "person_alert_history_id": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Unique identifier for this history record."
         },
         "person_alert_id": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Foreign key to person_alert. Links the history entry to a specific alert."
         },
         "action_type": {
           "type": "string",
-          "enum": ["INSERT", "UPDATE", "DELETE"]
+          "enum": ["INSERT", "UPDATE", "DELETE"],
+          "description": "Type of action recorded:\n- INSERT: New alert created\n- UPDATE: Existing alert modified\n- DELETE: Alert removed"
         },
         "changed_by_user_id": {
-          "type": "integer"
+          "type": "integer",
+          "description": "User ID of the staff member who performed the change."
         },
         "change_timestamp": {
           "type": "string",
-          "format": "date-time"
+          "format": "date-time",
+          "description": "Timestamp when the change was made (ISO 8601)."
         },
         "change_summary": {
-          "type": ["string", "null"]
+          "type": ["string", "null"],
+          "description": "Human-readable summary of the change (e.g., 'End date updated', 'Alert closed by safeguarding officer')."
+        },
+        "old_value": {
+          "type": ["object", "null"],
+          "description": "JSON object snapshot of key fields prior to the change (e.g., {\"alert_status\":\"Open\",\"end_date\":null}). Null for INSERT."
+        },
+        "new_value": {
+          "type": ["object", "null"],
+          "description": "JSON object snapshot of key fields after the change (e.g., {\"alert_status\":\"Closed\",\"end_date\":\"2025-08-20\"}). Null for DELETE."
+        },
+        "reason_for_change": {
+          "type": ["string", "null"],
+          "description": "Optional explanation of why the change was made (e.g., safeguarding review, medical update, administrative correction)."
         }
       },
       "required": ["person_alert_id", "action_type", "changed_by_user_id"]
     },
     "source_types": {
+      "title": "Table: source_types",
+      "description": "Lookup table enumerating the possible sources of an alert (e.g., GP, Social Worker, Housing Officer, Self-Reported) used to standardise provenance.",
       "type": "object",
       "properties": {
         "source_type_id": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Unique identifier for the source type."
         },
         "source_code": {
-          "type": "string"
+          "type": "string",
+          "description": "Short code for the source type (e.g., 'GP', 'SW', 'HO', 'SELF')."
         },
         "source_name": {
-          "type": "string"
+          "type": "string",
+          "description": "Full name/label of the source type (e.g., 'General Practitioner', 'Social Worker')."
         },
         "description": {
-          "type": ["string", "null"]
+          "type": ["string", "null"],
+          "description": "Optional notes describing the source type scope or usage."
         }
       },
       "required": ["source_code", "source_name"]
     },
     "alert_categories": {
+      "title": "Table: alert_categories",
+      "description": "Lookup table defining the broad categories of alerts used to organise and report on person_alert_codes.",
       "type": "object",
       "properties": {
         "alert_category_id": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Unique identifier for the alert category."
         },
         "alert_category_name": {
           "type": "string",
@@ -186,10 +245,35 @@
             "Communication Needs",
             "Other",
             "Unknown"
-          ]
+          ],
+          "description": "Human-readable alert category name. Limited to the standard set for consistent reporting."
         }
       },
       "required": ["alert_category_name"]
+    },
+    "special_category_data_types": {
+      "title": "Table: special_category_data_types",
+      "description": "Lookup table classifying GDPR 'special category data' types to support lawful basis, access control, and audit reporting.",
+      "type": "object",
+      "properties": {
+        "special_category_data_id": {
+          "type": "integer",
+          "description": "Unique identifier for the special category data type."
+        },
+        "category_code": {
+          "type": "string",
+          "description": "Short code for the category (e.g., 'MED', 'SAFE', 'NONE')."
+        },
+        "category_name": {
+          "type": "string",
+          "description": "Human-readable name of the category (e.g., 'Medical', 'Safeguarding', 'None')."
+        },
+        "description": {
+          "type": ["string", "null"],
+          "description": "Optional narrative about what the category covers and typical use cases."
+        }
+      },
+      "required": ["category_code", "category_name"]
     }
   }
 }

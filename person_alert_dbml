@@ -11,6 +11,12 @@ Table person_alert_codes {
   support_required varchar [null]
 }
 
+Table special_category_data_types {
+  special_category_data_id int [pk, increment]
+  category_code varchar
+  category_name varchar
+  description text [null]
+}
 Table alert_categories {
   alert_category_id int [pk, increment]
   alert_category_name varchar
@@ -25,13 +31,13 @@ Table source_types {
 
 Table person_alert {
   person_alert_id int [pk, increment]
-  person_id int
-  person_alert_code_id int [ref: > person_alert_codes.person_alert_code_id]
+  person_id int [not null]
+  person_alert_code_id int [not null, ref: > person_alert_codes.person_alert_code_id]
   source_type_id int [ref: > source_types.source_type_id, null]
   organisation_id int
-  created_by_user_id int [null]
-  source_details varchar [null]
-  alert_description varchar [null]
+  created_by_user_id int 
+  source_details varchar
+  alert_description varchar 
   informed_resident boolean [default: false]
   alert_progress varchar [null, note: 'Enum: Stable, Improving, Deteriorating, Fluctuating, Unknown']
   alert_duration_type varchar [null, note: 'Enum: Long Term, Temporary, Unknown']
@@ -39,9 +45,12 @@ Table person_alert {
   start_date date
   end_date date [null]
   review_date date [null]
-  active boolean [default: true]
+  is_active boolean [default: true]
+  alert_status varchar ['Enum: Open, Close, Pending, In Review, Archived']
   last_updated timestamp
-  updated_by_user_id int [null]
+  updated_by_user_id int 
+  confidentiality_level varchar ['Enum:Public, Private, Restricted, Confidential']
+  special_category_data_id int [null, ref: > special_category_data_types.special_category_data_id]
 }
 
 Table person_alert_history {
@@ -51,4 +60,7 @@ Table person_alert_history {
   changed_by_user_id int
   change_timestamp timestamp
   change_summary varchar [null]
+  old_value varchar [null]
+  new_value varchar [null]
+  reason_for_change varchar [null]
 }
