@@ -1,4 +1,6 @@
-# Demonstrating the Value of the Person Alert Model
+# Person Alert Codes Examples
+
+## Demonstrating the Value of the Person Alert Model
 
 These examples illustrate how the **Person Alert data model** supports both tenants and housing providers by ensuring that critical health, safety, and vulnerability information is captured, tracked, and acted upon effectively.  
 
