@@ -26,8 +26,8 @@ This repository contains all the resources you need to understand, implement, an
 These files are mostly for technical teams, but can be referenced for data understanding:
 - **[person_alert_sql](./person_alert_sql)** – Contains the full SQL DDL for creating the alert tables.
 - **[person_alert_json](./person_alert_json)** – JSON schema version of the table for integration with other systems.  
-- **[person_alert_erd](./person_alert_erd)** – Entity-Relationship Diagram showing the connections between alerts, categories, and other entities.  
-- **[person_alert_dblm](./person_alert_dbml)** – Database schema model written in DBML, used to define the tables, fields, and relationships in a structured, human-readable format.
+- **[person_alert_erd](./person_alert_erd.svg)** – Entity-Relationship Diagram showing the connections between alerts, categories, and other entities.  
+- **[person_alert_dbml](./person_alert_dbml)** – Database schema model written in DBML, used to define the tables, fields, and relationships in a structured, human-readable format.
 
 ### 4. Using the Tables
 - Start with the **[SQL](./person_alert_sql) or [JSON](./person_alert_json) tables** to understand what alerts exist and their structure.  
