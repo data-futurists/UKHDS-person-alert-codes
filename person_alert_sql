@@ -1,10 +1,10 @@
 CREATE TABLE person_alert (
     person_alert_id INTEGER PRIMARY KEY AUTOINCREMENT, -- Unique ID for this alert instance
-    person_id NOT NULL,                                -- FK to Person table (not defined here)
+    person_id NOT NULL,                                -- FK to tenant in Person table (not defined here)
     person_alert_code_id NOT NULL,                            -- FK to person_alert_codes table
-    source_type_id INTEGER(100),                      -- E.g. NHS, GP, Self-reported, Social Worker
-    organisation_id INTEGER(100),                     -- FK to Organisation table, if applicable (e.g. housing association, local authority)
-    created_by_user_id INTEGER(100),                   -- the user_id of the person who created the alert links to Person table
+    source_type_id INTEGER,                      -- E.g. NHS, GP, Self-reported, Social Worker
+    organisation_id INTEGER,                     -- FK to Organisation table, if applicable (e.g. housing association, local authority)
+    created_by_user_id INTEGER,                   -- the user_id of the person who created the alert links to Person table
     
     source_details TEXT,                               -- E.g. a specific GP, Hospital, or social worker
     alert_description TEXT,                            -- Optional: case-specific notes
@@ -23,14 +23,16 @@ CREATE TABLE person_alert (
     start_date DATE NOT NULL,
     end_date DATE,                                     -- Optional expiry
     review_date DATE,                                  -- Optional periodic review
-    active BOOLEAN DEFAULT TRUE,
+    is_active BOOLEAN DEFAULT TRUE,
+    alert_status VARCHAR(20) CHECK (alert_status IN ('Open', 'Closed', 'Pending', 'In Review', 'Archived')), -- Status of the alert
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_by_user_id INTEGER (100),                           -- the user_id of the person who last updated the alert, links to Person table
-   
+    updated_by_user_id INTEGER,                           -- the user_id of the person who last updated the alert, links to Person table
+    confidentiality_level VARCHAR(20) CHECK (confidentiality_level IN ('Public', 'Private', 'Restricted', 'Confidential')), -- Level of confidentiality for the alert
+    -- add table as well special_category_data_type VARCHAR(20) CHECK (special_category_data_type IN ('Medical', 'Sensitive', 'None')), -- Type of special category data, if applicable
     CONSTRAINT fk_alert_code FOREIGN KEY (person_alert_code_id) REFERENCES person_alert_codes(person_alert_code_id),
     CONSTRAINT fk_person FOREIGN KEY (person_id) REFERENCES person(person_id),
-    CONSTRAINT fk_alert_source FOREIGN KEY (alert_source_id) REFERENCES source_types(source_type_id),
-    CONSTRAINT fk_user FOREIGN KEY (created_by_user_id) REFERENCES person(person_id)
+    CONSTRAINT fk_alert_source FOREIGN KEY (source_type_id) REFERENCES source_types(source_type_id),
+    CONSTRAINT fk_user FOREIGN KEY (created_by_user_id) REFERENCES person(person_id),
     CONSTRAINT fk_updated_by_user FOREIGN KEY (updated_by_user_id) REFERENCES person(person_id)
     
 );
@@ -40,9 +42,15 @@ CREATE TABLE person_alert_history (
     person_alert_id INTEGER NOT NULL,                                     -- FK to person_alert table
     action_type VARCHAR(20) NOT NULL 
         CHECK (action_type IN ('INSERT', 'UPDATE', 'DELETE')),            -- Type of action performed
-    changed_by_user_id INTEGER NOT NULL,                                           -- the user_id of the person who made the change, links to Person table
+    changed_by_user_id INTEGER NOT NULL,                                  -- the user_id of the person who made the change, links to Person table
     change_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,        -- When the change was made
-    change_summary TEXT,                                                  -- Summary of changes made (e.g. "Alert updated to 'Improving' status")
+    change_summary VARCHAR(500),                                          -- Summary of changes made (e.g. "Alert updated to 'Improving' status")
+    
+    old_value TEXT,                -- JSON or text snapshot of old state
+    new_value TEXT,                -- JSON or text snapshot of new state
+    
+    reason_for_change TEXT,        -- Optional explanation (e.g. safeguarding review)
+    
     CONSTRAINT fk_person_alert FOREIGN KEY (person_alert_id) REFERENCES person_alert(person_alert_id),
     CONSTRAINT fk_changed_by FOREIGN KEY (changed_by_user_id) REFERENCES person(person_id)    
 );
@@ -59,7 +67,7 @@ CREATE TABLE source_types (
 );
 
 -- Populate the table with initial values
-INSERT INTO source_types (source_code, source_label, description) 
+INSERT INTO source_types (source_code, source_name, description) 
 VALUES
 ('GP', 'General Practitioner', 'Alert submitted by tenants NHS GP or primary care physician'),
 ('SELF', 'Tenant (Self-Reported)', 'Alert reported directly by the tenant'),
@@ -87,6 +95,30 @@ INSERT INTO alert_categories (alert_category_name) VALUES
 ('Other'),
 ('Unknown');
 
+-- Lookup table: Special category data types
+-- This table defines the special categories of personal data as per GDPR
+
+CREATE TABLE special_category_data_types (
+    special_category_data_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    category_code VARCHAR(20) UNIQUE NOT NULL,   -- short machine-readable code
+    category_name VARCHAR(100) NOT NULL,         -- human-readable label
+    description TEXT                             -- optional explanation
+);
+
+INSERT INTO special_category_data_types (category_code, category_name, description) VALUES
+('ETHNICITY', 'Racial or Ethnic Origin', 'Information about racial or ethnic background'),
+('POLITICAL', 'Political Opinions', 'Views or affiliations with political parties or movements'),
+('RELIGION', 'Religious or Philosophical Beliefs', 'Information about faith, belief systems, or non-belief'),
+('TRADE_UNION', 'Trade Union Membership', 'Membership of a trade union'),
+('GENETIC', 'Genetic Data', 'Personal data relating to inherited or acquired genetic characteristics'),
+('BIOMETRIC', 'Biometric Data', 'Data from biometrics (e.g. fingerprints, facial recognition) for identification'),
+('HEALTH', 'Health Data', 'Physical or mental health data, including medical conditions'),
+('SEX_LIFE', 'Sex Life', 'Information about sexual activity or history'),
+('SEXUAL_ORIENTATION', 'Sexual Orientation', 'Information about a person’s sexual orientation'),
+('NONE', 'Not Special Category Data', 'Default when no GDPR special category applies');
+
+
+
 -- Lookup table: Person alert codes
 -- This table defines the specific alert codes and their meanings
 CREATE TABLE person_alert_codes (
@@ -94,9 +126,9 @@ CREATE TABLE person_alert_codes (
     alert_code VARCHAR(10) NOT NULL,                        -- Top-level code (e.g. MED1)
     alert_subcode VARCHAR(15) NOT NULL,                     -- Subcode (e.g. MED1.01)
     
-    alert_category_id INTEGER(50) NOT NULL,                          -- FK to alert_categories table
-    alert_name VARCHAR(100) NOT NULL,                       -- Health condition or risk type (e.g. "Respiratory Condition")
-    alert_subname VARCHAR(100),                             -- Name of specific condition or risk (e.g. "Asthma")
+    alert_category_id INTEGER NOT NULL,                          -- FK to alert_categories table
+    alert_name VARCHAR(50) NOT NULL,                       -- Health condition or risk type (e.g. "Respiratory Condition")
+    alert_subname VARCHAR(50),                             -- Name of specific condition or risk (e.g. "Asthma")
             
 
     is_critical BOOLEAN DEFAULT FALSE,
@@ -126,7 +158,7 @@ INSERT INTO person_alert_codes (
 -- CARDIOVASCULAR CONDITIONS
 ('MED2', 'MED2.01', 1, 'Cardiovascular Condition', 'Hypertension (High Blood Pressure)', FALSE, FALSE, 'Medium', 'Provide stress-free environment; ensure regular medical access'),
 ('MED2', 'MED2.02', 1, 'Cardiovascular Condition', 'Heart Disease', TRUE, TRUE, 'High', 'Avoid upper floors without lift; ensure emergency access routes'),
-('MED2', 'MED2.03', 1, 'Cardiovascular Condition', 'Cardiovascular Disease', FALSE, FALSE, 'Medium', 'Avoid stairs; consider handrails or ground floor living'),
+('MED2', 'MED2.03', 1, 'Cardiovascular Condition', 'Cardiovascular Disease', TRUE, FALSE, 'Medium', 'Avoid stairs; consider handrails or ground floor living'),
 ('MED2', 'MED2.04', 1, 'Cardiovascular Condition', 'Angina or Heart Failure', TRUE, TRUE, 'Medium', 'Maintain warm, dry, and ventilated home environment'),
 ('MED2', 'MED2.05', 1, 'Cardiovascular Condition', 'Arrhythmia', TRUE, TRUE, 'High', 'Enable rapid emergency response; avoid isolated accommodation'),
 ('MED2', 'MED2.06', 1, 'Cardiovascular Condition', 'Peripheral Vascular Disease', TRUE, TRUE, 'High', 'Ensure safe access, ramps, non-slip flooring, and close proximity to amenities'),
@@ -144,7 +176,7 @@ INSERT INTO person_alert_codes (
 
 -- DIABETES & ENDOCRINE CONDITIONS
 ('MED5', 'MED5.01', 1, 'Endocrine Condition', 'Diabetes (Type 1)', TRUE, TRUE, 'High', 'Ensure refrigeration for insulin and medical equipment'),
-('MED5', 'MED5.02', 1, 'Endocrine Condition', 'Diabetes (Type 2)', FALSE, FALSE, 'Low', 'Promote access to healthy food and exercise spaces'),
+('MED5', 'MED5.02', 1, 'Endocrine Condition', 'Diabetes (Type 2)', FALSE, TRUE, 'Low', 'Promote access to healthy food and exercise spaces'),
 ('MED5', 'MED5.03', 1, 'Endocrine Condition', 'Thyroid Disorders', FALSE, FALSE, 'Low', 'Ensure regular medication routines are supported'),
 ('MED5', 'MED5.04', 1, 'Endocrine Condition', 'Adrenal Insufficiency', TRUE, TRUE, 'High', 'Ensure emergency steroid medication access and calm environment'),
 ('MED5', 'MED5.05', 1, 'Endocrine Condition', 'Pituitary Disorders', TRUE, TRUE, 'High', 'Support regular follow-up care and stable routines'),
@@ -182,7 +214,12 @@ INSERT INTO person_alert_codes (
 ('PREG1', 'PREG1.07', 2, 'Pregnancy', 'Pregnancy-related Hypertension', TRUE, TRUE, 'High', 'Monitor blood pressure and ensure emergency care access'),
 ('PREG1', 'PREG1.08', 2, 'Pregnancy', 'Premature Labour Risk', TRUE, TRUE, 'High', 'Ensure rapid response protocols and safe environment'),
 ('PREG1', 'PREG1.09', 2, 'Pregnancy', 'Pregnancy with Chronic Condition (e.g. Diabetes, Cardiac)', TRUE, TRUE, 'High', 'Coordinate specialist medical and housing support'),
-('PREG1', 'PREG1.10', 2, 'Pregnancy', 'Other Pregnancy-Related Condition', FALSE, FALSE, 'Medium', 'Ensure regular medical follow-up and safe living conditions');
+('PREG1', 'PREG1.10', 2, 'Pregnancy', 'Placenta Previa / Placental Abruption', TRUE, TRUE, 'High', 'Ensure immediate medical access and safe living environment'),
+('PREG1', 'PREG1.11', 2, 'Pregnancy', 'Hyperemesis Gravidarum', TRUE, TRUE, 'High', 'Provide hydration, nutritional support, and medical access'),
+('PREG1', 'PREG1.12', 2, 'Pregnancy', 'Intrauterine Growth Restriction (IUGR)', TRUE, TRUE, 'High', 'Monitor fetal growth and provide access to specialist care'),
+('PREG1', 'PREG1.13', 2, 'Pregnancy', 'Pregnancy-related Infection (e.g. UTI, Preterm Rupture of Membranes)', TRUE, TRUE, 'High', 'Ensure prompt medical treatment and safe environment'),
+('PREG1', 'PREG1.14', 2, 'Pregnancy', 'History of Recurrent Miscarriages', FALSE, TRUE, 'Medium', 'Provide emotional support and ensure access to antenatal care'),
+('PREG1', 'PREG1.15', 2, 'Pregnancy', 'Other Pregnancy-Related Condition', FALSE, FALSE, 'Medium', 'Ensure regular medical follow-up and safe living conditions');
 
 ----------------------------------------------------------------------------------------------------------------------------------------------
 -- MENTAL HEALTH CONDITIONS
@@ -193,11 +230,13 @@ INSERT INTO person_alert_codes (
 ('MH1', 'MH1.03', 3, 'Mental Health', 'Depression (Severe or Recurrent)', FALSE, TRUE, 'Medium', 'Check for missed appointments; offer support referrals'),
 ('MH1', 'MH1.04', 3, 'Mental Health', 'Bipolar Disorder', FALSE, TRUE, 'Medium', 'Monitor communication style; confirm understanding'),
 ('MH1', 'MH1.05', 3, 'Mental Health', 'Schizophrenia / Thought Disorder', TRUE, TRUE, 'High', 'Avoid sudden visits; provide support staff presence');
-('MH1', 'MH1.06', 3, 'Self-harm', 'Self-Harm History', TRUE, TRUE, 'High', 'Coordinate with support services before visits'),
+('MH1', 'MH1.06', 3, 'Self-harm', 'Self-Harm', TRUE, TRUE, 'High', 'Coordinate with support services before visits'),
 ('MH1', 'MH1.07', 3, 'Suicidal', 'Suicidal Ideation', TRUE, TRUE, 'High', 'Coordinate with support services before visits'),
 ('MH1', 'MH1.08', 3, 'Substance Use', 'Substance Use (Recovery or Active)', TRUE, TRUE, 'Medium', 'Be alert to environment risks; liaise with support staff'),
 ('MH1', 'MH1.09', 3, 'Trauma', 'PTSD / Trauma Trigger Risk', TRUE, TRUE, 'Medium', 'Avoid uniformed visits; use trauma-informed contact'),
-
+('MH1', 'MH1.10', 3, 'Eating Disorder', 'Anorexia / Bulimia', TRUE, TRUE, 'High', 'Monitor nutrition and medical safety; liaise with support services'),
+('MH1', 'MH1.11', 3, 'Personality Disorder', 'High-Risk Self-Harm or Impulsive Behaviour', TRUE, TRUE, 'Medium', 'Ensure staff safety and support; coordinate care plan'),
+('MH1', 'MH1.12', 3, 'Obsessive-Compulsive Disorder', 'Severe OCD with Safety Risk (Hoarding/Fire)', TRUE, TRUE, 'Medium', 'Monitor environment for hazards; coordinate with support services');
 -- COGNITIVE & DEVELOPMENTAL NEEDS
 ('MH2', 'MH2.01', 3, 'Cognitive & Developmental', 'Learning Disability', FALSE, TRUE, 'Medium', 'Use Easy Read or plain language'),
 ('MH2', 'MH2.02', 3, 'Cognitive & Developmental', 'Dementia / Memory Loss', FALSE, TRUE, 'Medium', 'Confirm contact with carer'),
@@ -247,6 +286,17 @@ INSERT INTO person_alert_codes (
 ('RISK4', 'RISK4.01', 5, 'Risk to Resident', 'Self-Neglect', TRUE, TRUE, 'High', 'Refer to safeguarding team; joint home visit'),
 ('RISK4', 'RISK4.02', 5, 'Risk to Resident', 'Suicidal Ideation or History', TRUE, FALSE, 'High', 'Coordinate with support worker or clinician'),
 ('RISK4', 'RISK4.03', 5, 'Risk to Resident', 'Substance Misuse', TRUE, FALSE, 'Medium', 'Check for sharps/risks before contractor visits'),
+
+-- MEDICAL RISKS
+('RISK5', 'RISK5.01', 5, 'Medical Risk', 'Home Oxygen Use', TRUE, TRUE, 'High', 'Implement fire safety precautions; alert visiting staff/contractors'),
+('RISK5', 'RISK5.02', 5, 'Medical Risk', 'Compressed Gas Cylinders', TRUE, TRUE, 'High', 'Secure storage; avoid ignition sources; inform fire services if needed'),
+('RISK5', 'RISK5.03', 5, 'Medical Risk', 'Flammable Medical Supplies', TRUE, TRUE, 'High', 'Specialist PPE; notify fire services'),
+('RISK5', 'RISK5.04', 5, 'Medical Risk', 'Electrical Dependency for Medical Equipment', TRUE, FALSE, 'High', 'Ensure emergency power backup plan is in place'),
+('RISK5', 'RISK5.05', 5, 'Medical Risk', 'Infectious Disease Risk', TRUE, FALSE, 'Medium', 'Follow infection control protocols; PPE for staff/contractors'),
+('RISK5', 'RISK5.06', 5, 'Medical Risk', 'Immunocompromised Resident', TRUE, FALSE, 'Medium', 'Minimise dust/mould exposure during works; schedule works at low-risk times'),
+('RISK5', 'RISK5.07', 5, 'Medical Risk', 'Bedbound/Severely Reduced Mobility', TRUE, FALSE, 'Medium', 'Plan access routes; avoid blocking movement or exits'),
+('RISK5', 'RISK5.08', 5, 'Medical Risk', 'Epilepsy with Environmental Triggers', TRUE, FALSE, 'Medium', 'Avoid use of strobe lighting/tools causing photosensitivity'),
+('RISK5', 'RISK5.09', 5, 'Medical Risk', 'Medical Sharps in Property', TRUE, FALSE, 'Medium', 'Check for sharps before contractor visits');
 
 --------------------------------------------------------------------------------------------------------------------------------------------------
 -- SAFEGUARDING ALERTS  
