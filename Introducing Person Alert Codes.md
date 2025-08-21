@@ -1,4 +1,4 @@
-# Introduction to Person Alert Codes
+# Introducing to Person Alert Codes
 
 ## Table of contents
 - [Introduction](#introduction)
@@ -10,6 +10,8 @@
 
 The Person Alert Codes Module is designed to provide a structured, standardised, and interoperable way of recording alerts about individuals within the housing sector. It aims to enhance how social landlords record, manage, and share critical information about tenant and household circumstances that may require adjustments, safeguarding, or specialist responses. The system aims to improve tenant safety, ensure legal compliance, and enable data interoperability across housing management systems.
 This document serves as a sector-wide guidance and implementation framework aligned with the HACT UK Housing Data Standards and MHCLG priorities, including Awaab's Law, safeguarding responsibilities, and equality, diversity, and inclusion (EDI) obligations.
+
+In developing the Person Alert Codes list, inspiration was drawn from several established frameworks and organisations to ensure consistency, interoperability, and sector relevance. These include the NHS and SNOMED for medical terminology and coding standards, the Department for Work and Pensions (DWP) for welfare-related alerts, SAVII for social care and safeguarding practices, and HACT for housing data standards. By synthesising principles and best practices from these sources, the codes list is designed to be both comprehensive and practical for housing providers, supporting accurate recording, risk identification, and integrated service delivery.
 
 ### The issue
 
