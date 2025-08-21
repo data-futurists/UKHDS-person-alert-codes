@@ -24,10 +24,10 @@ This repository contains all the resources you need to understand, implement, an
 
 ### 3. Technical Files
 These files are mostly for technical teams, but can be referenced for data understanding:
-- **[person_alert.sql](./person_alert.sql)** – Contains the full SQL DDL for creating the alert tables.
-- **[person_alert.json](./person_alert.json)** – JSON schema version of the table for integration with other systems.  
-- **[person_alert.erd](./person_alert.erd)** – Entity-Relationship Diagram showing the connections between alerts, categories, and other entities.  
-- **[person_alert.dblm](./person_alert.dblm)** – Database lifecycle model, showing how alert data is created, updated, and maintained over time.
+- **[person_alert.sql](./person_alert_sql)** – Contains the full SQL DDL for creating the alert tables.
+- **[person_alert.json](./person_alert_json)** – JSON schema version of the table for integration with other systems.  
+- **[person_alert.erd](./person_alert_erd)** – Entity-Relationship Diagram showing the connections between alerts, categories, and other entities.  
+- **[person_alert.dblm](./person_alert_dblm)** – Database lifecycle model, showing how alert data is created, updated, and maintained over time.
 
 ### 4. Using the Tables
 - Start with the **SQL or JSON tables** to understand what alerts exist and their structure.  
