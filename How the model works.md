@@ -38,7 +38,16 @@ Even after closure, the history of the alert remains accessible for reporting an
 
 ---
 
-## 5. Data Flow Diagram
+## 5. Handling Special Category Data
+
+Some alerts involve data that is considered particularly sensitive under ICO guidance (e.g., health conditions, ethnicity, religion).  
+These are flagged using the `special_category_data_types` table.  
+
+This ensures that housing providers are aware when alerts contain special category information, so they can apply the correct safeguards, access controls, and handling procedures.
+
+---
+
+## 6. Data Flow Diagram
 
 ```mermaid
 flowchart LR
@@ -48,9 +57,16 @@ flowchart LR
     PAC --> AC[alert_categories]
     PA --> ST[source_types]
     PA --> PAH[person_alert_history]
+    PA --> SCDT[special_category_data_types]
 
     style PA fill:#f9f,stroke:#333,stroke-width:2px
     style PAC fill:#bbf,stroke:#333,stroke-width:2px
     style AC fill:#bfb,stroke:#333,stroke-width:2px
     style ST fill:#bbf,stroke:#333,stroke-width:2px
     style PAH fill:#fbf,stroke:#333,stroke-width:2px
+    style SCDT fill:#fbb,stroke:#333,stroke-width:2px
+
+
+
+
+
