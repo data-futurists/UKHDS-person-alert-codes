@@ -1,0 +1,282 @@
+CREATE TABLE person_alert (
+    person_alert_id INTEGER PRIMARY KEY AUTOINCREMENT, -- Unique ID for this alert instance
+    person_id NOT NULL,                                -- FK to Person table (not defined here)
+    person_alert_code_id NOT NULL,                            -- FK to person_alert_codes table
+    source_type_id INTEGER(100),                      -- E.g. NHS, GP, Self-reported, Social Worker
+    organisation_id INTEGER(100),                     -- FK to Organisation table, if applicable (e.g. housing association, local authority)
+    created_by_user_id INTEGER(100),                   -- the user_id of the person who created the alert links to Person table
+    
+    source_details TEXT,                               -- E.g. a specific GP, Hospital, or social worker
+    alert_description TEXT,                            -- Optional: case-specific notes
+    informed_resident BOOLEAN DEFAULT FALSE,           -- Was the tenant informed?
+    
+    alert_progress VARCHAR(20) CHECK (alert_progress IN (     --maybe alert_status
+        'Stable',
+        'Improving',
+        'Deteriorating',
+        'Fluctuating',
+        'Unknown'
+    )), 
+    alert_duration_type VARCHAR(20) CHECK (alert_duration_type IN ('Short Term', 'Long Term', 'Temporary', 'Unknown')),
+    alert_duration INTEGER,                            -- Duration in days if known (e.g. 30 for temporary)
+
+    start_date DATE NOT NULL,
+    end_date DATE,                                     -- Optional expiry
+    review_date DATE,                                  -- Optional periodic review
+    active BOOLEAN DEFAULT TRUE,
+    last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_by_user_id INTEGER (100),                           -- the user_id of the person who last updated the alert, links to Person table
+   
+    CONSTRAINT fk_alert_code FOREIGN KEY (person_alert_code_id) REFERENCES person_alert_codes(person_alert_code_id),
+    CONSTRAINT fk_person FOREIGN KEY (person_id) REFERENCES person(person_id),
+    CONSTRAINT fk_alert_source FOREIGN KEY (alert_source_id) REFERENCES source_types(source_type_id),
+    CONSTRAINT fk_user FOREIGN KEY (created_by_user_id) REFERENCES person(person_id)
+    CONSTRAINT fk_updated_by_user FOREIGN KEY (updated_by_user_id) REFERENCES person(person_id)
+    
+);
+
+CREATE TABLE person_alert_history (
+    person_alert_history_id INTEGER PRIMARY KEY AUTOINCREMENT,            -- Unique ID for this history record
+    person_alert_id INTEGER NOT NULL,                                     -- FK to person_alert table
+    action_type VARCHAR(20) NOT NULL 
+        CHECK (action_type IN ('INSERT', 'UPDATE', 'DELETE')),            -- Type of action performed
+    changed_by_user_id INTEGER NOT NULL,                                           -- the user_id of the person who made the change, links to Person table
+    change_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,        -- When the change was made
+    change_summary TEXT,                                                  -- Summary of changes made (e.g. "Alert updated to 'Improving' status")
+    CONSTRAINT fk_person_alert FOREIGN KEY (person_alert_id) REFERENCES person_alert(person_alert_id),
+    CONSTRAINT fk_changed_by FOREIGN KEY (changed_by_user_id) REFERENCES person(person_id)    
+);
+---------------------------------------------------------------------------------------------------------------------
+-- LOOKUP TABLES --
+---------------------------------------------------------------------------------------------------------------------
+
+-- Standard sources of person alerts
+CREATE TABLE source_types (
+    source_type_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_code VARCHAR(10) NOT NULL UNIQUE,                -- Short code (e.g. GP, SW)
+    source_name VARCHAR(100) NOT NULL,                     -- Full name (e.g. General Practitioner)
+    description TEXT                                        -- Optional notes 
+);
+
+-- Populate the table with initial values
+INSERT INTO source_types (source_code, source_label, description) 
+VALUES
+('GP', 'General Practitioner', 'Alert submitted by tenants NHS GP or primary care physician'),
+('SELF', 'Tenant (Self-Reported)', 'Alert reported directly by the tenant'),
+('SW', 'Social Worker', 'Alert raised by a local authority or medical social worker'),
+('POL', 'Police', 'Alert triggered by an incident involving law enforcement'),
+('REL', 'Relative / Carer / Guardian', 'Alert reported by a family member or legal guardian'),
+('HO', 'Housing Officer', 'Housing staff who observed or received tenant information'),
+('OTH', 'Other Professional', 'Any other professional (e.g. school nurse, mental health team)'),
+('UNK', 'Unknown', 'Source of the alert not recorded or unknown');
+
+-- Lookup table: Categories of person alerts
+CREATE TABLE alert_categories (
+    alert_category_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    alert_category_name VARCHAR(50) UNIQUE NOT NULL
+);
+
+INSERT INTO alert_categories (alert_category_name) VALUES
+('Medical'),
+('Pregnancy'),
+('Mental Health'),
+('Age Group'),
+('Risk'),
+('Safeguarding'),
+('Communication Needs'),
+('Other'),
+('Unknown');
+
+-- Lookup table: Person alert codes
+-- This table defines the specific alert codes and their meanings
+CREATE TABLE person_alert_codes (
+    person_alert_code_id INTEGER PRIMARY KEY AUTOINCREMENT,        -- Unique internal ID
+    alert_code VARCHAR(10) NOT NULL,                        -- Top-level code (e.g. MED1)
+    alert_subcode VARCHAR(15) NOT NULL,                     -- Subcode (e.g. MED1.01)
+    
+    alert_category_id INTEGER(50) NOT NULL,                          -- FK to alert_categories table
+    alert_name VARCHAR(100) NOT NULL,                       -- Health condition or risk type (e.g. "Respiratory Condition")
+    alert_subname VARCHAR(100),                             -- Name of specific condition or risk (e.g. "Asthma")
+            
+
+    is_critical BOOLEAN DEFAULT FALSE,
+    is_awaab_relevant BOOLEAN DEFAULT FALSE,                -- If relevant to Awaab’s Law, to link to the hazards list 
+    repairs_impact VARCHAR(10) CHECK (repairs_impact IN ('High', 'Medium', 'Low', 'None')),
+    support_required TEXT,                                  -- e.g. "Use interpreter", "Extra ventilation checks"
+
+    CONSTRAINT fk_alert_category FOREIGN KEY (alert_category_id) REFERENCES alert_categories(alert_category_id),
+    CONSTRAINT unique_alert_code UNIQUE (alert_code, alert_subcode)
+    );
+
+INSERT INTO person_alert_codes (
+    alert_code, alert_subcode, alert_category_id, alert_name, alert_subname, 
+    is_critical, is_awaab_relevant, repairs_impact, support_required
+) VALUES
+--------------------------------------------------------------------------------------------------------------------------------
+ -- MEDICAL CONDITIONS --
+--------------------------------------------------------------------------------------------------------------------------------
+
+-- RESPIRATORY CONDITIONS
+('MED1', 'MED1.01', 1, 'Respiratory Condition', 'Asthma', TRUE, TRUE, 'High', 'Prioritise mould/damp repairs'),
+('MED1', 'MED1.02', 1, 'Respiratory Condition', 'COPD/Chronic Lung Disease', TRUE, TRUE, 'High', 'Ensure adequate heating/ventilation'),
+('MED1', 'MED1.03', 1, 'Respiratory Condition', 'Bronchiectasis', TRUE, TRUE, 'High', 'Ensure access to emergency services'),
+('MED1', 'MED1.04', 1, 'Respiratory Condition', 'Cystic Fibrosis', TRUE, TRUE, 'High', 'Specialist ventilation may be required'),
+('MED1', 'MED1.05', 1, 'Respiratory Condition', 'Other Chronic Lung Condition', TRUE, TRUE, 'High', 'Ensure well-ventilated and dry home'),
+
+-- CARDIOVASCULAR CONDITIONS
+('MED2', 'MED2.01', 1, 'Cardiovascular Condition', 'Hypertension (High Blood Pressure)', FALSE, FALSE, 'Medium', 'Provide stress-free environment; ensure regular medical access'),
+('MED2', 'MED2.02', 1, 'Cardiovascular Condition', 'Heart Disease', TRUE, TRUE, 'High', 'Avoid upper floors without lift; ensure emergency access routes'),
+('MED2', 'MED2.03', 1, 'Cardiovascular Condition', 'Cardiovascular Disease', FALSE, FALSE, 'Medium', 'Avoid stairs; consider handrails or ground floor living'),
+('MED2', 'MED2.04', 1, 'Cardiovascular Condition', 'Angina or Heart Failure', TRUE, TRUE, 'Medium', 'Maintain warm, dry, and ventilated home environment'),
+('MED2', 'MED2.05', 1, 'Cardiovascular Condition', 'Arrhythmia', TRUE, TRUE, 'High', 'Enable rapid emergency response; avoid isolated accommodation'),
+('MED2', 'MED2.06', 1, 'Cardiovascular Condition', 'Peripheral Vascular Disease', TRUE, TRUE, 'High', 'Ensure safe access, ramps, non-slip flooring, and close proximity to amenities'),
+
+-- CANCER CONDITIONS
+('MED3', 'MED3.01', 1, 'Cancer Condition', 'Cancer (Active Treatment)', TRUE, TRUE, 'High', 'Ensure warm, hygienic home with easy access for hospital visits'),
+('MED3', 'MED3.02', 1, 'Cancer Condition', 'Cancer (Post-Treatment Recovery)', FALSE, TRUE, 'Medium', 'Minimise damp and stress; ensure clean and restful space'),
+('MED3', 'MED3.03', 1, 'Cancer Condition', 'Cancer (Terminal Care)', TRUE, TRUE, 'High', 'Enable carer access; provide calm, accessible home environment');
+
+-- IMMUNE SYSTEM CONDITIONS
+('MED4', 'MED4.01', 1, 'Immune System Condition', 'HIV/AIDS', TRUE, TRUE, 'High', 'Ensure access to medical care and infection control support'),
+('MED4', 'MED4.02', 1, 'Immune System Condition', 'Autoimmune Disorders', TRUE, TRUE, 'High', 'Monitor for fatigue and mobility; ensure access to specialist care'),
+('MED4', 'MED4.03', 1, 'Immune System Condition', 'Immunosuppression (e.g. post-transplant)', TRUE, TRUE, 'High', 'Limit exposure to mould/damp; prioritise infection control'),
+('MED4', 'MED4.04', 1, 'Immune System Condition', 'Severe Allergies or Anaphylaxis Risk', TRUE, TRUE, 'High', 'Avoid allergen exposure; ensure emergency service access'),
+
+-- DIABETES & ENDOCRINE CONDITIONS
+('MED5', 'MED5.01', 1, 'Endocrine Condition', 'Diabetes (Type 1)', TRUE, TRUE, 'High', 'Ensure refrigeration for insulin and medical equipment'),
+('MED5', 'MED5.02', 1, 'Endocrine Condition', 'Diabetes (Type 2)', FALSE, FALSE, 'Low', 'Promote access to healthy food and exercise spaces'),
+('MED5', 'MED5.03', 1, 'Endocrine Condition', 'Thyroid Disorders', FALSE, FALSE, 'Low', 'Ensure regular medication routines are supported'),
+('MED5', 'MED5.04', 1, 'Endocrine Condition', 'Adrenal Insufficiency', TRUE, TRUE, 'High', 'Ensure emergency steroid medication access and calm environment'),
+('MED5', 'MED5.05', 1, 'Endocrine Condition', 'Pituitary Disorders', TRUE, TRUE, 'High', 'Support regular follow-up care and stable routines'),
+
+-- NEUROLOGICAL CONDITIONS
+('MED6', 'MED6.01', 1, 'Neurological Condition', 'Multiple Sclerosis', TRUE, TRUE, 'High', 'Ensure accessible layout and warm indoor temperature'),
+('MED6', 'MED6.02', 1, 'Neurological Condition', 'Parkinsons Disease', TRUE, TRUE, 'High', 'Install mobility aids and support with tremor-safe fixtures'),
+('MED6', 'MED6.03', 1, 'Neurological Condition', 'Stroke Recovery Needs', TRUE, TRUE, 'High', 'Enable step-free access and appropriate home modifications'),
+('MED6', 'MED6.04', 1, 'Neurological Condition', 'Neuropathy or Nerve Damage', FALSE, TRUE, 'Medium', 'Ensure safe flooring and lighting to prevent injury'),
+('MED6', 'MED6.05', 1, 'Neurological Condition', 'Epilepsy (Severe)', TRUE, TRUE, 'High', 'Minimise sharp corners; ensure safety in bathrooms and kitchens'),
+('MED6', 'MED6.06', 1, 'Neurological Condition', 'Other Neurological Condition', FALSE, FALSE, 'Low', 'Enable access to medical appointments and appropriate equipment'),
+
+-- OTHER CHRONIC HEALTH CONDITIONS
+('MED7', 'MED7.01', 1, 'Other Chronic Condition', 'Chronic Pain Syndrome', FALSE, TRUE, 'Medium', 'Support with ergonomic furniture and quiet living space'),
+('MED7', 'MED7.02', 1, 'Other Chronic Condition', 'Fibromyalgia', FALSE, TRUE, 'Medium', 'Ensure warm and restful environment; reduce physical stressors'),
+('MED7', 'MED7.03', 1, 'Other Chronic Condition', 'Rheumatoid Arthritis', TRUE, TRUE, 'High', 'Install handrails, step-free entry, and accessible bathrooms'),
+('MED7', 'MED7.04', 1, 'Other Chronic Condition', 'Osteoarthritis (Severe)', TRUE, TRUE, 'High', 'Prioritise mobility adaptations and non-slip surfaces'),
+('MED7', 'MED7.05', 1, 'Other Chronic Condition', 'Chronic Fatigue Syndrome (CFS)', FALSE, TRUE, 'Medium', 'Ensure quiet, low-stimulation environment'),
+('MED7', 'MED7.06', 1, 'Other Chronic Condition', 'Kidney Disease', FALSE, TRUE, 'Medium', 'Ensure hygiene facilities and easy access to clinics'),
+('MED7', 'MED7.07', 1, 'Other Chronic Condition', 'Liver Disease', TRUE, TRUE, 'High', 'Monitor for temperature and cleanliness; access to care'),
+('MED7', 'MED7.08', 1, 'Other Chronic Condition', 'Gastrointestinal Disorders (e.g. Crohns)', TRUE, TRUE, 'High', 'Ensure private and hygienic toilet access'),
+('MED7', 'MED7.09', 1, 'Other Chronic Condition', 'Hepatitis (Active)', TRUE, TRUE, 'High', 'Ensure hygiene and reduce infection transmission risks'),
+('MED7', 'MED7.10', 1, 'Other Chronic Condition', 'Other Chronic Health Condition', FALSE, FALSE, 'Low', 'Ensure access to regular health and social care support');
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+-- PREGNANCY CONDITIONS
+----------------------------------------------------------------------------------------------------------------------------------------------
+-- PREGNANCY
+('PREG1', 'PREG1.01', 2, 'Pregnancy', 'Normal Pregnancy', FALSE, FALSE, 'Low', 'Provide pregnancy-friendly environment and access to antenatal care'),
+('PREG1', 'PREG1.02', 2, 'Pregnancy', 'High-Risk Pregnancy', TRUE, TRUE, 'High', 'Ensure priority access to medical care and emergency support'),
+('PREG1', 'PREG1.03', 2, 'Pregnancy', 'Gestational Diabetes', TRUE, TRUE, 'High', 'Support access to glucose monitoring and dietary management'),
+('PREG1', 'PREG1.04', 2, 'Pregnancy', 'Pre-eclampsia', TRUE, TRUE, 'High', 'Ensure rapid medical intervention access and safe environment'),
+('PREG1', 'PREG1.05', 2, 'Pregnancy', 'Multiple Pregnancy (Twins or more)', FALSE, TRUE, 'Medium', 'Provide additional mobility and comfort support'),
+('PREG1', 'PREG1.06', 2, 'Pregnancy', 'Postpartum Depression Risk', TRUE, TRUE, 'Medium', 'Facilitate access to mental health support and community resources'),
+('PREG1', 'PREG1.07', 2, 'Pregnancy', 'Pregnancy-related Hypertension', TRUE, TRUE, 'High', 'Monitor blood pressure and ensure emergency care access'),
+('PREG1', 'PREG1.08', 2, 'Pregnancy', 'Premature Labour Risk', TRUE, TRUE, 'High', 'Ensure rapid response protocols and safe environment'),
+('PREG1', 'PREG1.09', 2, 'Pregnancy', 'Pregnancy with Chronic Condition (e.g. Diabetes, Cardiac)', TRUE, TRUE, 'High', 'Coordinate specialist medical and housing support'),
+('PREG1', 'PREG1.10', 2, 'Pregnancy', 'Other Pregnancy-Related Condition', FALSE, FALSE, 'Medium', 'Ensure regular medical follow-up and safe living conditions');
+
+----------------------------------------------------------------------------------------------------------------------------------------------
+-- MENTAL HEALTH CONDITIONS
+----------------------------------------------------------------------------------------------------------------------------------------------
+-- MENTAL HEALTH
+('MH1', 'MH1.01', 3, 'Mental Health', 'Severe Anxiety / Panic', FALSE, TRUE, 'Medium', 'Use written contact methods'),
+('MH1', 'MH1.02', 3, 'Mental Health', 'Paranoia / Psychosis', TRUE, TRUE, 'High', 'Provide detailed visit explanations'),
+('MH1', 'MH1.03', 3, 'Mental Health', 'Depression (Severe or Recurrent)', FALSE, TRUE, 'Medium', 'Check for missed appointments; offer support referrals'),
+('MH1', 'MH1.04', 3, 'Mental Health', 'Bipolar Disorder', FALSE, TRUE, 'Medium', 'Monitor communication style; confirm understanding'),
+('MH1', 'MH1.05', 3, 'Mental Health', 'Schizophrenia / Thought Disorder', TRUE, TRUE, 'High', 'Avoid sudden visits; provide support staff presence');
+('MH1', 'MH1.06', 3, 'Self-harm', 'Self-Harm History', TRUE, TRUE, 'High', 'Coordinate with support services before visits'),
+('MH1', 'MH1.07', 3, 'Suicidal', 'Suicidal Ideation', TRUE, TRUE, 'High', 'Coordinate with support services before visits'),
+('MH1', 'MH1.08', 3, 'Substance Use', 'Substance Use (Recovery or Active)', TRUE, TRUE, 'Medium', 'Be alert to environment risks; liaise with support staff'),
+('MH1', 'MH1.09', 3, 'Trauma', 'PTSD / Trauma Trigger Risk', TRUE, TRUE, 'Medium', 'Avoid uniformed visits; use trauma-informed contact'),
+
+-- COGNITIVE & DEVELOPMENTAL NEEDS
+('MH2', 'MH2.01', 3, 'Cognitive & Developmental', 'Learning Disability', FALSE, TRUE, 'Medium', 'Use Easy Read or plain language'),
+('MH2', 'MH2.02', 3, 'Cognitive & Developmental', 'Dementia / Memory Loss', FALSE, TRUE, 'Medium', 'Confirm contact with carer'),
+('MH2', 'MH2.03', 3, 'Cognitive & Developmental', 'Autism / Sensory Sensitivity', FALSE, TRUE, 'Medium', 'Minimise noise/disruption; avoid unplanned visits'),
+('MH2', 'MH2.04', 3, 'Cognitive & Developmental', 'ADHD / Executive Functioning Needs', FALSE, FALSE, 'Low', 'Give reminders and timeframes in writing'),
+('MH2', 'MH2.05', 3, 'Cognitive & Developmental', 'Mental Capacity Concerns', TRUE, TRUE, 'High', 'Liaise with carer or advocate; confirm legal rep'),
+('MH2', 'MH2.06', 3, 'Cognitive & Developmental', 'Challenging Behaviour Risk', TRUE, TRUE, 'High', 'Ensure staff trained in de-escalation techniques'),
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+-- AGE-BASED ALERTS
+------------------------------------------------------------------------------------------------------------------------------------------------
+-- AGE GROUPS
+('AGE1', 'AGE1.01', 4, 'Newborn (0-28 days)', 'Newborn infant', TRUE, TRUE, 'High', 'Ensure safe, clean, temperature-controlled environment; minimise exposure to hazards and infections'),
+('AGE1', 'AGE1.02', 4, 'Infant (1-12 months)', 'Under 1 year', TRUE, TRUE, 'High', 'Provide safe sleeping arrangements and childproofing; monitor for hazards'),
+('AGE1', 'AGE1.03', 4, 'Toddler (1-3 years)', 'Young child', FALSE, TRUE, 'Medium', 'Ensure child-safe environment and secure hazards; support developmental needs'),
+('AGE1', 'AGE1.04', 4, 'Preschool (3-5 years)', 'Early childhood', FALSE, FALSE, 'Low', 'Maintain safe environment and encourage play space'),
+('AGE1', 'AGE1.05', 4, 'School Age (6-12 years)', 'School-age child', FALSE, FALSE, 'Low', 'Ensure safe home environment and study space'),
+('AGE1', 'AGE1.06', 4, 'Teenager (13-17 years)', 'Adolescent', FALSE, FALSE, 'Low', 'Support privacy and emotional wellbeing'),
+('AGE1', 'AGE1.07', 4, 'Elderly (65+ years)', 'Older adult', TRUE, TRUE, 'High', 'Ensure mobility support, safe access, and fall prevention');
+
+------------------------------------------------------------------------------------------------------------------------------------------------
+-- RISKS
+------------------------------------------------------------------------------------------------------------------------------------------------
+-- ENVIRONMENTAL RISKS
+('RISK1', 'RISK1.01', 5, 'Environmental Risk', 'Hoarding Light', FALSE, FALSE, 'Low', 'Engage with mental health or social care support services'),
+('RISK1', 'RISK1.02', 5, 'Environmental Risk', 'Hoarding Moderate', FALSE, TRUE, 'Medium', 'Schedule joint visit with caution and support staff'),
+('RISK1', 'RISK1.03', 5, 'Environmental Risk', 'Hoarding Severe', TRUE, TRUE, 'High', 'Escalate to safeguarding and specialist teams'),
+('RISK1', 'RISK1.05', 5, 'Environmental Risk', 'Cold Home Risk Medical', TRUE, TRUE, 'High', 'Escalate heating/hot water repairs immediately to reduce health risks'),
+('RISK1', 'RISK1.06', 5, 'Environmental Risk', 'No Access Risk Medical Need', FALSE, TRUE, 'Medium', 'Coordinate with tenant and support workers to ensure safe entry'),
+
+-- STAFF SAFETY RISKS
+('RISK2', 'RISK2.01', 5, 'Risk to Staff', 'Physical Aggression', TRUE, FALSE, 'High', 'Paired visits; alert contractors'),
+('RISK2', 'RISK2.02', 5, 'Risk to Staff', 'Verbal Abuse/Threats', TRUE, FALSE, 'Medium', 'Staff with de-escalation training only'),
+('RISK2', 'RISK2.03', 5, 'Risk to Staff', 'Harassment/Hate Behaviour', TRUE, FALSE, 'High', 'Match staff appropriately'),
+('RISK2', 'RISK2.04', 5, 'Risk to Staff', 'History of Violence', TRUE, FALSE, 'High', 'Schedule paired visits; inform staff beforehand'),
+('RISK2', 'RISK2.05', 5, 'Risk to Staff', 'Presence of Weapons', TRUE, FALSE, 'High', 'Do not enter alone; notify police if needed'),
+('RISK2', 'RISK2.06', 5, 'Risk to Staff', 'Hostile Environment (e.g. gang presence)', TRUE, FALSE, 'High', 'Avoid visits at risky times; coordinate with security'),
+('RISK2', 'RISK2.07', 5, 'Risk to Staff', 'Mental Health Crisis in Household', TRUE, FALSE, 'Medium', 'Use trauma-informed approaches; alert mental health teams'),
+
+
+-- RISK TO CONTRACTORS
+('RISK3', 'RISK3.01', 5, 'Risk to Contractors', 'Unsafe Working Conditions', TRUE, FALSE, 'High', 'Pause works; risk assessment required'),
+('RISK3', 'RISK3.02', 5, 'Risk to Contractors', 'Resident Aggression', TRUE, FALSE, 'High', 'Use trusted contractors; alert before visit'),
+('RISK3', 'RISK3.03', 5, 'Risk to Contractors', 'Presence of Dangerous Pets', TRUE, FALSE, 'Medium', 'Ensure animals are secured before access'),
+
+-- RISK TO RESIDENT THEMSELVES
+('RISK4', 'RISK4.01', 5, 'Risk to Resident', 'Self-Neglect', TRUE, TRUE, 'High', 'Refer to safeguarding team; joint home visit'),
+('RISK4', 'RISK4.02', 5, 'Risk to Resident', 'Suicidal Ideation or History', TRUE, FALSE, 'High', 'Coordinate with support worker or clinician'),
+('RISK4', 'RISK4.03', 5, 'Risk to Resident', 'Substance Misuse', TRUE, FALSE, 'Medium', 'Check for sharps/risks before contractor visits'),
+
+--------------------------------------------------------------------------------------------------------------------------------------------------
+-- SAFEGUARDING ALERTS  
+--------------------------------------------------------------------------------------------------------------------------------------------------
+-- DOMESTIC ABUSE
+('SAF1', 'SAF1.01', 6, 'Domestic Abuse Survivor', 'Known Domestic Abuse Survivor',  TRUE, TRUE, 'Medium', 'Use safe contact methods; no caller ID'),
+('SAF1', 'SAF1.02', 6, 'Domestic Abuse Survivor', 'MARAC/Police Case',  TRUE, TRUE, 'High', 'No info sharing with third parties'),
+
+-- CHILD PROTECTION
+('SAF2', 'SAF2.01', 6, 'Child Safeguarding Concern', 'Child Protection Plan in Place',  TRUE, TRUE, 'High', 'Liaise with Children Services; avoid unannounced visits'),
+('SAF2', 'SAF2.02', 6, 'Child Safeguarding Concern', 'Unexplained School Absences / Welfare Concern',  FALSE, TRUE, 'Medium', 'Notify Tenancy and Safeguarding Team'),
+('SAF2', 'SAF2.03', 6, 'Child Safeguarding Concern', 'Unsafe Home Environment for Children',  TRUE, TRUE, 'High', 'Report via safeguarding policy; joint visit with social care'),
+
+-- ADULT PROTECTION
+('SAF3', 'SAF3.01', 6, 'Vulnerable Adult', 'Adult at Risk Care Act Section 42 Enquiry',  TRUE, TRUE, 'High', 'Follow safeguarding procedures; coordinate with adult social care'),
+('SAF3', 'SAF3.02', 6, 'Vulnerable Adult', 'Financial Exploitation or Fraud Risk',  TRUE, TRUE, 'High', 'Alert safeguarding team; monitor financial transactions'),
+('SAF3', 'SAF3.03', 6, 'Vulnerable Adult', 'Physical Abuse or Neglect Risk',  TRUE, TRUE, 'High', 'Report to safeguarding team; ensure safety'),
+
+---------------------------------------------------------------------------------------------------
+-- COMMUNICATION ADJUSTMENTS -- can further be linked to communication entities from the Standards
+---------------------------------------------------------------------------------------------------
+('COMM1', 'COMM1.01', 7, 'Communication Adjustment', 'Non-Literate / Limited Reading Ability', FALSE, TRUE, 'Medium', 'Use verbal or in-person explanations'),
+('COMM1', 'COMM1.02', 7, 'Communication Adjustment', 'Cognitive Processing Delay', FALSE, TRUE, 'Medium', 'Give information slowly; repeat key points'),
+('COMM1', 'COMM1.03', 7, 'Communication Adjustment', 'Uses Communication Device (e.g. AAC)', FALSE, TRUE, 'High', 'Allow extra time for interaction; check for device'),
+('COMM1', 'COMM1.04', 7, 'Communication Adjustment', 'Speech Impairment or Muteness', FALSE, TRUE, 'Medium', 'Use written or visual communication'),
+('COMM1', 'COMM1.05', 7, 'Communication Adjustment', 'Stammer / Speech Fluency Issue', FALSE, FALSE, 'Low', 'Be patient and avoid interrupting'),
+('COMM1', 'COMM1.06', 7, 'Communication Adjustment', 'Prefers Email Only (Due to Anxiety)', FALSE, TRUE, 'Low', 'Avoid phone calls; confirm email received'),
+('COMM1', 'COMM1.07', 7, 'Communication Adjustment', 'Neurodiverse Prefers Structured Contact', FALSE, TRUE, 'Medium', 'Give clear agendas and notice before visit'),
+('COMM1', 'COMM1.08', 7, 'Communication Adjustment', 'Requires Large Print or Visual Aids', FALSE, TRUE, 'Low', 'Send high-contrast large font letters'),
+('COMM1', 'COMM1.09', 7, 'Communication Adjustment', 'Requires Sign Language Interpreter', FALSE, TRUE, 'High', 'Book interpreter in advance; confirm availability'),
+('COMM1', 'COMM1.10', 7, 'Communication Adjustment', 'Requires Braille or Tactile Communication', FALSE, TRUE, 'High', 'Ensure materials are available in Braille'),
+('COMM1', 'COMM1.11', 7, 'Communication Adjustment', 'Requires Translation Services', FALSE, TRUE, 'High', 'Book translation service in advance; confirm language needs'),
+('COMM1', 'COMM1.12', 7, 'Communication Adjustment', 'Requires Assistive Technology Support', FALSE, TRUE, 'High', 'Ensure technology is compatible and accessible');

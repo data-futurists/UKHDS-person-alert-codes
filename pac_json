@@ -1,0 +1,195 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://example.com/person_alert.schema.json",
+  "title": "Person Alert",
+  "type": "object",
+  "properties": {
+    "person_alert_id": {
+      "type": "integer",
+      "description": "Unique ID for this alert instance"
+    },
+    "person_id": {
+      "type": "integer",
+      "description": "Foreign key to the person table"
+    },
+    "person_alert_code_id": {
+      "type": "integer",
+      "description": "Foreign key to person_alert_codes table"
+    },
+    "source_type_id": {
+      "type": ["integer", "null"],
+      "description": "Foreign key to source_types table"
+    
+    },
+    "organisation_id": {
+      "type": ["integer", "null"],
+      "description": "Foreign key to organisation table"
+    
+    },
+    "created_by_user_id": {
+      "type": "integer",
+      "description": "User ID of the person who created the alert"
+    },
+    "source_details": {
+      "type": ["string", "null"],
+      "description": "Details about the specific source (e.g. specific GP or social worker)"
+    },
+    "alert_description": {
+      "type": ["string", "null"],
+      "description": "Case-specific notes"
+    },
+    "informed_resident": {
+      "type": "boolean",
+      "default": false
+    },
+    "alert_progress": {
+      "type": ["string", "null"],
+      "enum": ["Stable", "Improving", "Deteriorating", "Fluctuating", "Unknown", null]
+    },
+    "alert_duration_type": {
+      "type": ["string", "null"],
+      "enum": ["Long Term", "Temporary", "Unknown", null]
+    },
+    "alert_duration": {
+      "type": ["integer", "null"],
+      "description": "Duration in days if known"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "review_date": {
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_updated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_by_user_id": {
+      "type": ["integer", "null"],
+      "description": "User ID of the person who last updated the alert"
+    }
+  },
+  "required": [
+    "person_id",
+    "person_alert_code_id",
+    "start_date"
+  ],
+  "$defs": {
+    "person_alert_code": {
+      "type": "object",
+      "properties": {
+        "person_alert_code_id": {
+          "type": "integer"
+        },
+        "alert_code": {
+          "type": "string"
+        },
+        "alert_subcode": {
+          "type": "string"
+        },
+        "alert_category_id": {
+          "type": "integer"
+        },
+        "alert_name": {
+          "type": "string"
+        },
+        "alert_subname": {
+          "type": ["string", "null"]
+        },
+        "is_critical": {
+          "type": "boolean",
+          "default": false
+        },
+        "is_awaab_relevant": {
+          "type": "boolean",
+          "default": false
+        },
+        "repairs_impact": {
+          "type": ["string", "null"],
+          "enum": ["High", "Medium", "Low", "None", null]
+        },
+        "support_required": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": ["alert_code", "alert_subcode", "alert_name"]
+    },
+    "person_alert_history": {
+      "type": "object",
+      "properties": {
+        "person_alert_history_id": {
+          "type": "integer"
+        },
+        "person_alert_id": {
+          "type": "integer"
+        },
+        "action_type": {
+          "type": "string",
+          "enum": ["INSERT", "UPDATE", "DELETE"]
+        },
+        "changed_by_user_id": {
+          "type": "integer"
+        },
+        "change_timestamp": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "change_summary": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": ["person_alert_id", "action_type", "changed_by_user_id"]
+    },
+    "source_types": {
+      "type": "object",
+      "properties": {
+        "source_type_id": {
+          "type": "integer"
+        },
+        "source_code": {
+          "type": "string"
+        },
+        "source_name": {
+          "type": "string"
+        },
+        "description": {
+          "type": ["string", "null"]
+        }
+      },
+      "required": ["source_code", "source_name"]
+    },
+    "alert_categories": {
+      "type": "object",
+      "properties": {
+        "alert_category_id": {
+          "type": "integer"
+        },
+        "alert_category_name": {
+          "type": "string",
+          "enum": [
+            "Medical",
+            "Pregnancy",
+            "Mental Health",
+            "Age Group",
+            "Risk",
+            "Safeguarding",
+            "Communication Needs",
+            "Other",
+            "Unknown"
+          ]
+        }
+      },
+      "required": ["alert_category_name"]
+    }
+  }
+}

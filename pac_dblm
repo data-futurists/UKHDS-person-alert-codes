@@ -1,0 +1,54 @@
+Table person_alert_codes {
+  person_alert_code_id int [pk, increment]
+  alert_code varchar
+  alert_subcode varchar
+  alert_category_id int [ref: > alert_categories.alert_category_id]
+  alert_name varchar
+  alert_subname varchar [null]
+  is_critical boolean [default: false]
+  is_awaab_relevant boolean [default: false]
+  repairs_impact varchar [null, note: 'Enum: High, Medium, Low, None']
+  support_required varchar [null]
+}
+
+Table alert_categories {
+  alert_category_id int [pk, increment]
+  alert_category_name varchar
+}
+
+Table source_types {
+  source_type_id int [pk, increment]
+  source_code varchar
+  source_name varchar
+  description varchar [null]
+}
+
+Table person_alert {
+  person_alert_id int [pk, increment]
+  person_id int
+  person_alert_code_id int [ref: > person_alert_codes.person_alert_code_id]
+  source_type_id int [ref: > source_types.source_type_id, null]
+  organisation_id int
+  created_by_user_id int [null]
+  source_details varchar [null]
+  alert_description varchar [null]
+  informed_resident boolean [default: false]
+  alert_progress varchar [null, note: 'Enum: Stable, Improving, Deteriorating, Fluctuating, Unknown']
+  alert_duration_type varchar [null, note: 'Enum: Long Term, Temporary, Unknown']
+  alert_duration int [null, note: 'Duration in days if known']
+  start_date date
+  end_date date [null]
+  review_date date [null]
+  active boolean [default: true]
+  last_updated timestamp
+  updated_by_user_id int [null]
+}
+
+Table person_alert_history {
+  person_alert_history_id int [pk, increment]
+  person_alert_id int [ref: > person_alert.person_alert_id]
+  action_type varchar [note: 'Enum: INSERT, UPDATE, DELETE']
+  changed_by_user_id int
+  change_timestamp timestamp
+  change_summary varchar [null]
+}
