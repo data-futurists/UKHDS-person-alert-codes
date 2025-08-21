@@ -18,7 +18,7 @@ This repository contains all the resources you need to understand, implement, an
 - **[How the model works](./How%20the%20model%20works.md)** – Explains the code structure, hierarchy, and categories.
 
 ### 2. Code Structure and Examples
-- **[Code List structure](./Code%20List%20structure.md)** – Shows how top-level codes (like `MED1`) and subcodes (`MED1.01`) are formed, with examples for medical, mental health, and other categories.  
+- **[Code List structure](./Code%20List%20Structure.md)** – Shows how top-level codes (like `MED1`) and subcodes (`MED1.01`) are formed, with examples for medical, mental health, and other categories.  
 - **[Example Scenarios](./Example%20Scenarios.md)** – Illustrates practical use cases in housing settings to help you understand when and how to use alerts.  
 - **[Design Decisions](./Design%20Decisions.md)** – Details why certain fields exist, how criticality and support needs are recorded, and other design considerations.
 
