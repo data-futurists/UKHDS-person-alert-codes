@@ -188,7 +188,7 @@ The `person_alert` table records individual alert instances associated with pers
 - **How is it designed:** Mandatory `DATE` field, not nullable.  
 - **How does it add value:** Establishes the timeline of the alert.  
 - **Questions to ask:** Should this be editable after creation?  
-- **What alternatives were considered:** Automatically setting to `CURRENT_DATE`, but explicit input is safer.
+- **What alternatives were considered:** Use `valid_from`. Automatically setting to `CURRENT_DATE`, but explicit input is safer.
 
 ---
 
@@ -197,7 +197,7 @@ The `person_alert` table records individual alert instances associated with pers
 - **How is it designed:** Optional `DATE` field.  
 - **How does it add value:** Helps prevent stale alerts from remaining active indefinitely.  
 - **Questions to ask:** How to handle indefinite or open-ended alerts?  
-- **What alternatives were considered:**  
+- **What alternatives were considered:**  Use `valid_to`.
 
 ---
 
@@ -248,6 +248,18 @@ The `person_alert` table records individual alert instances associated with pers
 - **What alternatives were considered:** Free-text name.
 
 ---
+
+#### confidentiality_level
+- **What:** Defines the sensitivity of the alert data and who within the housing organisation can access it.
+- **How is it designed:** Currently implemented as a VARCHAR(20) column with a CHECK constraint restricting values to ('Public', 'Private', 'Restricted', 'Confidential').
+- **How does it add value:** Ensures housing staff respect data sensitivity, supports GDPR compliance, and helps align with safeguarding practices.
+- **Questions to ask:** 
+  - Do housing providers need configurable levels of access beyond the four options?
+  - Should access be role-based (e.g. case worker, safeguarding officer) instead of just categorical levels?
+- **What alternatives were considered:**
+  - Using a lookup table (confidentiality_levels) with code + description for flexibility and future extensibility.
+  - Storing levels in an RBAC/permissions model where access is tied directly to user roles rather than predefined categories.
+  - Allowing custom, organisation-specific labels instead of a fixed set.
 
 ## person_alert_history
 
@@ -310,10 +322,57 @@ Tracks all meaningful changes made to `person_alert` records for auditability, c
 
 #### change_summary
 - **What:** Description of what changed.  
-- **How designed:** `TEXT`, optional.  
+- **How designed:** A VARCHAR(500) field intended for short summaries (e.g. “Alert status updated from Open to Closed”).  
 - **How it adds value:** Gives a human-readable explanation of the action taken, useful for auditors or reviewers.  
-- **Questions to ask:** Should this follow a structured template (e.g. "Field X changed from Y to Z")?  
-- **What alternatives were considered:**  
+- **Questions to ask:**
+  - Should this follow a structured template (e.g. "Field X changed from Y to Z")?
+  - Should this be auto-generated (e.g. via trigger comparing old vs new values) or entered manually by staff?
+  - Should it be mandatory for all updates, or optional when reason_for_change is provided?
+- **What alternatives were considered:**
+  - Storing only structured diffs (old_value, new_value) and generating summaries at query time.
+  - Making reason_for_change the primary narrative field and dropping change_summary.
+
+---
+
+#### old_value
+- **What:** Stores a snapshot of the alert’s value(s) before a change was made. 
+- **How designed:** A TEXT field intended to store JSON or a serialized key:value structure.
+- **How it adds value:** Provides a clear audit trail for compliance, safeguarding, and dispute resolution by showing what was changed.
+- **Questions to ask:**
+  - Should this always be structured JSON instead of free text?
+  - Do we need to store the full record snapshot, or only the changed fields?
+- **What alternatives were considered:**
+  - A dedicated audit diff table with one row per field changed.
+  - Storing only change_summary (human-readable, but less precise).
+  - Using database triggers with JSON snapshots for consistency.
+
+---
+
+#### new_value
+- **What:** Stores a snapshot of the alert’s value(s) after the change was made.
+- **How designed:** A TEXT field intended to store JSON or a serialized key:value structure.
+- **How it adds value:** Enables side-by-side comparison with old_value, supports data integrity checks, and provides a reliable history for reporting.
+- **Questions to ask:**
+  - Should this capture only the fields that changed or the full record state?
+  - Should we enforce a JSON schema for consistency across records?
+- **What alternatives were considered:**
+  - Using event sourcing style tables where every state is logged as a complete record.
+  - Storing only change_summary (human-readable, but less precise).
+  - Maintaining a shadow archive table of all versions of person_alert.
+
+---
+
+#### reason_for_change
+- **What:** A free-text explanation of why the alert was updated or removed.
+- **How designed:** A nullable TEXT field, user-entered, optional but recommended for safeguarding cases.
+- **How it adds value:** Captures the intent behind changes, which is important for case management, safeguarding reviews, and GDPR accountability.
+- **Questions to ask:**
+  - Should this field be mandatory for certain action types (e.g. DELETE or status changes)?
+  - Should there be predefined reasons (lookup list) instead of free text to improve reporting consistency?
+- **What alternatives were considered:**
+  - Mandatory lookup table of change reasons with an optional free-text “other” field.
+  - Allowing integration with workflow systems that already capture reasons.
+  - Relying only on change_summary without a formal reason field.
 
 ---
 
